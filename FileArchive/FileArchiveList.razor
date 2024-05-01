@@ -1,0 +1,127 @@
+﻿@using Microsoft.AspNetCore.Components.Web.Virtualization
+@using Microsoft.AspNetCore.Components.Forms
+@using System.ComponentModel
+
+<style>
+	.hover-item {
+		text-decoration: inherit;
+		cursor: inherit;
+	}
+
+	.hover-item:hover {
+		text-decoration: underline;
+		cursor: pointer;
+	}
+</style>
+
+<div style="height:@Height;overflow-y:scroll" class="form-control">
+	<table class="table">
+		<thead>
+			<tr>
+				<th style="width:30%;">File name</th>
+				@if (_displayDescription)
+				{
+					<th style="width:30%;">Description</th>
+				}
+				<th style="width:20%;">State</th>
+				@if (AllowAdd && AllowDelete is false)
+				{
+					<th style="width:20%;">Remove</th>
+				}
+				else if (AllowDelete)
+				{
+					<th style="width:20%;">Delete</th>
+				}
+			</tr>
+		</thead>
+		<tbody>
+			<Virtualize ItemsProvider="GetRows" Context="File" SpacerElement="tr" @ref="filesGrid">
+				<ItemContent>
+					<tr>
+						<td>
+							@if (AllowDownload)
+							{
+								<span class="hover-item" @onclick="@(() => DownloadFile(File))">@File.Filename</span>
+							}
+							else
+							{
+								@File.Filename
+							}
+						</td>
+						@if (_displayDescription)
+						{
+							if (AllowUpdate && File.Insert is false || AllowUpdateOnNew && File.Insert is true)
+							{
+								<td>
+									<InputText class="form-control"
+											   Value="@File.Description"
+											   ValueExpression="()=>File.Description"
+											   ValueChanged="(string description)=>DescriptionChanged(description, File)" />
+								</td>
+							}
+							else
+							{
+								<td>@File.Description</td>
+							}
+						}
+						<td>
+							@if (File.Insert)
+							{
+								<span>To be added</span>
+							}
+							else if (File.Delete)
+							{
+								<span>To be deleted</span>
+							}
+							else if (File.Update)
+							{
+								<span>To be updated</span>
+							}
+							else
+							{
+								<span>Archived</span>
+							}
+						</td>
+						@if (AllowAdd || AllowDelete)
+						{
+							<td>
+								@if (File.Insert)
+								{
+									<button type="button" @onclick="@(async () => await RemoveNewFile(File))" class="btn btn-secondary">Remove file</button>
+								}
+								else if (AllowDelete)
+								{
+									<InputCheckbox @bind-Value="@File.Delete" />
+								}
+							</td>
+						}
+					</tr>
+				</ItemContent>
+				<EmptyContent>
+					<p>
+						There are no files to display.
+					</p>
+				</EmptyContent>
+				<Placeholder>
+					Loading...
+				</Placeholder>
+			</Virtualize>
+		</tbody>
+	</table>
+
+	@if (AllowAdd)
+	{
+		<div class="form-group row">
+			<div class="col-sm-10">
+				@if (AllowSelectMultipleFiles)
+				{
+					<InputFile OnChange="LoadFiles" multiple class="btn mt-3" accept="@FileTypesAccepted" />
+				}
+				else
+				{
+					<InputFile OnChange="LoadFiles" class="btn mt-3" accept="@FileTypesAccepted" />
+				}
+			</div>
+		</div>
+	}
+</div>

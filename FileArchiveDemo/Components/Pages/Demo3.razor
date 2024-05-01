@@ -1,0 +1,131 @@
+﻿@page "/demo3"
+@rendermode InteractiveServer
+@* Få styr på dette med InteractiveServer *@
+@using FileArchive
+@using System.ComponentModel.DataAnnotations
+@inject IConfiguration config
+
+@inject IFileArchiveStorage fileArchiveStorage
+@inject IFileArchiveFileInfoCRUD fileArchiveFileInfoCRUD
+
+<PageTitle>Demo 3: List of files in File Archive</PageTitle>
+
+<h1>Demo 3: List of files in File Archive</h1>
+
+<p>This demo shows:</p>
+<ul>
+    <li>The user cannot add files</li>
+    <li>The user cannot delete files</li>
+    <li>The description of each file is displayed and the user cannot edit</li>
+    <li>The user can download the files one at the time</li>
+    <li>The two field Description and Date are not affected</li>
+</ul>
+<br />
+
+<EditForm Model="DemoUIModel" OnValidSubmit="SubmitForm" class="form-control">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="form-group row">
+        <label for="demouimodel-description" class="col-sm-2 col-form-label">Report description:</label>
+        <div class="col-sm-10">
+            <InputText id="demouimodel-description" @bind-Value="DemoUIModel.Description"></InputText>
+        </div>
+    </div>
+    <div class="form-group row">
+        <label for="demouimodel-date" class="col-sm-2 col-form-label">Date:</label>
+        <div class="col-sm-10">
+            <InputDate id="demouimodel-date" @bind-Value="DemoUIModel.Date"></InputDate>
+        </div>
+    </div>
+    <div class="form-group row">
+        <label class="col-sm-2 col-form-label">Files:</label>
+        <div class="col-sm-10">
+            <FileArchiveList Files="DemoUIModel.Files"
+                        AllowAdd="false"
+                        AllowUpdate="false"
+                        AllowDownload="true"
+                        AllowDelete="false"
+                        DisplayDescription="true"
+                        DisplayExistingFiles="true"
+                        Height="300px">
+            </FileArchiveList>
+        </div>
+    </div>
+    <div class="form-group row">
+        <div class="col-sm-10">
+            <button type="submit" class="btn btn-primary mt-3">Submit form</button>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    private class DemoFieldsForUI
+    {
+        public string? Description { get; set; } = "Demo 3";
+        public DateTime Date { get; set; } = DateTime.Now.Date;
+
+        public IList<FileArchiveFileInfoUI> Files { get; set; }
+
+        public DemoFieldsForUI()
+        {
+            Files = new List<FileArchiveFileInfoUI>();
+        }
+    }
+
+    [SupplyParameterFromForm]
+    DemoFieldsForUI DemoUIModel { get; set; } = new();
+
+    private IFileArchiveCRUD? fileArchiveCRUD;
+
+    private long reportId = 4712; // In a real-world application,
+                                  // the Id is returned by e.g.
+                                  // the SQL server.
+
+    //private string userId = "8888-9999";
+
+    protected override void OnInitialized()
+    {
+        fileArchiveCRUD = new FileArchiveCRUD(fileArchiveFileInfoCRUD,
+                                              fileArchiveStorage);
+    }
+
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            string parentKey = reportId.ToString();
+            DemoUIModel.Files = fileArchiveCRUD!.GetListOfFileInfoForArchive(parentKey);
+            StateHasChanged();
+        }
+
+        base.OnAfterRender(firstRender);
+    }
+
+
+    private async Task SubmitForm()
+    {
+        // If the component is used in a CREATE situation, then
+        // you must do what is nessecary to establish the key that
+        // is going to be the ParentKey for the files.
+        // That is, in this example we are to create an incident
+        // report. Data must be written to the storage (database),
+        // and the key must be obtained, as it will serve as a
+        // parent key for the storage of information for the files.
+
+        // Save Incident report data
+        // 
+
+        // Obtain key
+        // reportId = ....
+
+        // Store files
+        string parentKey = reportId.ToString();
+
+        // Set in comment, as no action is allowed. If it was active, it would do nothing.
+        // var result = await fileArchiveCRUD!.CreateUpdateDeleteArchiveFromUI(parentKey, DemoUIModel.Files);
+        await Task.CompletedTask;
+        return;
+    }
+}
