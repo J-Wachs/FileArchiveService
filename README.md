@@ -48,9 +48,10 @@ of the information about the file. This prohibit that users can try to do malici
 Download the repo and open the demo project in Visual Studio. The repo is set up to store information about files in a
 JSON file. This is only for demo purpose for a single user. It will not work in a multiuser environment. Further, the
 demo project is configured to store the actual files in the folder 'C:\FileArchiveStorage'. You must create this folder
-before running the demo project. If the folder does not exist, an exception is thrown. Play about with the demo.
+before running the demo project. If the folder does not exist, an exception is thrown. Play around with the demo.
 
-Please note, that the demo project is prepared for using Data First with Entity Framework.
+Please note, that the demo project is prepared for using Data First with Entity Framework, should you wish the store
+information on a SQL server.
 
 ### Setting up your own project to use the File Archive service
 To use the File Archive service in your own projects, you must add the service project to your solution. Then you must
@@ -70,13 +71,13 @@ builder.Services.AddScoped<IFileArchiveJWTokenHelper, FileArchiveJWTokenHelper>(
 The two services at bottom, are for the Java Web Token security that is used when downloading files.
 
 ### Adding and using the File Archive component in your own projects
-Add the File Archive component to the relevant Create/Update pages in your project. If the page is an Update page, you
+Add the File Archive component to the relevant pages in your project. If the page is an Update page, you
 must add code to retrieve information about the files in the archive (see demos). This list is passed to the File Archive
 component, in order for the user to maintain the File Archive.
 
 In the method that handles a successful submit request (the OnValidSubmit property on the EditForm tag), you must call
-the method that will maintain the File Archive and possibly upload new files. Please take a close look at the code in the
-demos and copy the nessecary code over.
+the method that will maintain the File Archive and possibly upload new files. Please take a closer look at the code in the
+demos and copy the necessary code over.
 
 As files are to be stored under a 'parent key', your OnValidSubmit method must establish the parent key in create
 situations.
@@ -85,8 +86,8 @@ Please note that depending on the config of the File Archive component, the user
 
 ## Modifying the File Archive service for your own use
 
-Allowing users to upload files opens a risk of virus infected files enter your system. You should defenitely consider
-extending the upload part, for it to call a virus scanner. Which method that is the right one for you, is something that
+Allowing users to upload files opens a risk of virus infected files entering your system. You should definitely consider
+extending the upload part, have it call a virus scanner. Which method that is the right one for you, is something that
 you must figure out.
 
 There are services that expose a virus scanner API that you can call. When using the option to store files on a folder,
@@ -94,6 +95,8 @@ make sure that the virus scanner on the server scans the folder in question.
 
 Your organisation can have other requirements that are not covered by my project. Please feel free to adapt a local 
 version to fit your needs.
+
+Remember to change the passphrase for the signing of the Java Web Token.
 
 ## Found a bug?
 
@@ -124,3 +127,14 @@ about the tenant, and making sure, this information is passed though the service
 
 ### How do I get all the Parent Keys that are used when storing files?
 Currently there is no functionality to do that. 
+
+### How do I use OIOSAML/SAML to validate the user and the download?
+You will have to read the OIOSAML/SAML documentation and possibly find a OIOSAML/SAML framework that will do the hard work.
+However, you can take the needed parts from this service and use it, e.g. the download service etc.
+
+### I have pages where I just want to display information about the files, not download. Do I need the File Archive Component?
+You have two options:
+* Use the File Archive component, and set the config to not allow adding, updating and download
+* Or, just loop over the list of file information that is returned from the call to 'fileArchiveCRUD.GetListOfFileInfoForArchive(parentKey);'
+ and write the relevant informtion to the screen.
+ 
