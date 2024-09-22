@@ -11,15 +11,15 @@ public class FileArchiveJWTokenHelperRead(IJWTokenHelper jwTokenHelper) : IFileA
     public UserIdAndFileIdDTO GetUserIdAndFileIdFromJWToken(string jwToken)
     {
         var result = jwTokenHelper.ValidateToken(jwToken);
-        if (result.Success is false)
+        if (result.IsSuccess is false)
         {
             throw new InvalidOperationException();
         }
 
-        var temp = result.Result!.Claims.First(x => x.Type == JWTokenHelper.JWTClaimSubject).Value;
+        var temp = result.Data!.Claims.First(x => x.Type == JWTokenHelper.JWTClaimSubject).Value;
         long userId = long.Parse(temp);
 
-        temp = result.Result.Claims.First(x => x.Type == JWTFileId).Value;
+        temp = result.Data.Claims.First(x => x.Type == JWTFileId).Value;
         long fileId = long.Parse(temp);
 
         return new UserIdAndFileIdDTO(userId, fileId);

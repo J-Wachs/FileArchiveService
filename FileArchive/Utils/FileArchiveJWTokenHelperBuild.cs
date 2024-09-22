@@ -4,7 +4,7 @@ public class FileArchiveJWTokenHelperBuild(IJWTokenHelper jwTokenHelper) : IFile
 {
     private const string JWTFileId = "file_id";
 
-    public ResultObject<string> BuildTokenForFileDownload(string curUserId, long id)
+    public Result<string> BuildTokenForFileDownload(string curUserId, long id)
     {
         IDictionary<string, string> claims = new Dictionary<string, string>
         {

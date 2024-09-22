@@ -50,7 +50,7 @@
 						</td>
 						@if (_displayDescription)
 						{
-							if (AllowUpdate && File.Insert is false || AllowUpdateOnNew && File.Insert is true)
+							if (AllowUpdate is true && File.Insert is false || AllowUpdateOnNew is true && File.Insert is true)
 							{
 								<td>
 									<InputText class="form-control"
