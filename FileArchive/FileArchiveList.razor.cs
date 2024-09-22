@@ -16,7 +16,7 @@ public partial class FileArchiveList
 	private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
 
 	[Parameter]
-	public IList<FileArchiveFileInfoUI> Files { get; set; } = new List<FileArchiveFileInfoUI>();
+	public IList<FileArchiveFileInfoUI> Files { get; set; } = [];
 
 	[Parameter]
 	public string? FileTypesAccepted { get; set; }
@@ -362,9 +362,9 @@ public partial class FileArchiveList
 			if (file is not null && file.Id is not null)
 			{
 				var result = FileArchiveJWTokenHelperBuild!.BuildTokenForFileDownload(_curUserId, (long)file.Id);
-				if (result.Success)
+				if (result.IsSuccess)
 				{
-					await JSRuntime.InvokeVoidAsync("open", $"/api/FileArchive/DownloadFile?token={result.Result}", "_blank");
+					await JSRuntime.InvokeVoidAsync("open", $"/api/FileArchive/DownloadFile?token={result.Data}", "_blank");
 				}
 			}
 		}

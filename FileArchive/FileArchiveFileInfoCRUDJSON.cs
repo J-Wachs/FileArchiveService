@@ -21,9 +21,8 @@ public class FileArchiveFileInfoCRUDJSON : IFileArchiveFileInfoCRUD
     private const int NotFound = -1;
 
     public FileArchiveFileInfoCRUDJSON(IConfiguration config)
-		{
-
-        this._targetPath = config.GetValue<string>(FileArchiveConstants.ConfigPath);
+	{
+        _targetPath = config.GetValue<string>(FileArchiveConstants.ConfigPath);
         if (_targetPath is null)
         {
             throw new DirectoryNotFoundException(FileArchiveConstants.ConfigPath);
@@ -34,7 +33,7 @@ public class FileArchiveFileInfoCRUDJSON : IFileArchiveFileInfoCRUD
             throw new DirectoryNotFoundException(_targetPath);
         }
 
-		this._targetJSONFile = Path.Combine(_targetPath, "FileInfo.json");
+		_targetJSONFile = Path.Combine(_targetPath, "FileInfo.json");
     }
 
     public void CreateFileInfo(FileArchiveInfo fileInfo, string userId)

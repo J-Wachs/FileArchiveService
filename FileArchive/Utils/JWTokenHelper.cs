@@ -21,33 +21,33 @@ public class JWTokenHelper(IConfiguration config) : IJWTokenHelper
     private readonly string _audience = ConfigHelper.GetMustExistConfigValue<string>(config, JWTAudience);
     private readonly string _secret = ConfigHelper.GetMustExistConfigValue<string>(config, JWTSecret);
 
-    public ResultObject<ClaimsPrincipal> ValidateToken(string jwToken)
+    public Result<ClaimsPrincipal> ValidateToken(string jwToken)
     {
         if (String.IsNullOrWhiteSpace(jwToken))
         {
-            return ResultFactory.BadResult<ClaimsPrincipal>($"{nameof(ValidateToken)}: jwToken is missing");
+            return Result<ClaimsPrincipal>.Failure($"{nameof(ValidateToken)}: jwToken is missing");
         }
 
         var resultPrincipal = GetPrincipal(jwToken);
-        if (resultPrincipal.Success is false)
+        if (resultPrincipal.IsSuccess is false)
         {
-            return ResultFactory.BadResult<ClaimsPrincipal>(resultPrincipal.Messages);
+            return Result<ClaimsPrincipal>.Failure(resultPrincipal.Messages);
         }
 
-        if (resultPrincipal.Result is null || resultPrincipal.Result.Claims.Any() is false)
+        if (resultPrincipal.Data is null || resultPrincipal.Data.Claims.Any() is false)
         {
-            return ResultFactory.BadResult<ClaimsPrincipal>($"{nameof(ValidateToken)}: There is no Claims in the token");
+            return Result<ClaimsPrincipal>.Failure($"{nameof(ValidateToken)}: There is no Claims in the token");
         }
 
-        if (resultPrincipal.Result.Identity?.IsAuthenticated is false)
+        if (resultPrincipal.Data.Identity?.IsAuthenticated is false)
         {
-            return ResultFactory.BadResult<ClaimsPrincipal>($"{nameof(ValidateToken)}: The user is not identified in the calling client.");
+            return Result<ClaimsPrincipal>.Failure($"{nameof(ValidateToken)}: The user is not identified in the calling client.");
         }
 
-        return ResultFactory.GoodResult<ClaimsPrincipal>(resultPrincipal.Result);
+        return Result<ClaimsPrincipal>.Success(resultPrincipal.Data);
     }
 
-    private ResultObject<ClaimsPrincipal> GetPrincipal(string token)
+    private Result<ClaimsPrincipal> GetPrincipal(string token)
     {
         try
         {
@@ -63,7 +63,7 @@ public class JWTokenHelper(IConfiguration config) : IJWTokenHelper
             
             if (jwToken is null)
             {
-                return ResultFactory.BadResult<ClaimsPrincipal>("Token cannot be read");
+                return Result<ClaimsPrincipal>.Failure("Token cannot be read");
             }
 
             var validationParameters = new TokenValidationParameters()
@@ -80,23 +80,23 @@ public class JWTokenHelper(IConfiguration config) : IJWTokenHelper
             tokenHandler.InboundClaimTypeMap.Clear();
             var principal = tokenHandler.ValidateToken(token, validationParameters, out SecurityToken securityToken);
 
-            return ResultFactory.GoodResult<ClaimsPrincipal>(principal);
+            return Result<ClaimsPrincipal>.Success(principal);
         }
         catch (SecurityTokenInvalidSignatureException ex)
         {
-            return ResultFactory.BadResult<ClaimsPrincipal>($"{nameof(GetPrincipal)}: Signature does not match: '{ex}'");
+            return Result<ClaimsPrincipal>.Failure($"{nameof(GetPrincipal)}: Signature does not match: '{ex}'");
         }
         catch (Exception ex)
         {
-            return ResultFactory.BadResult<ClaimsPrincipal>($"{nameof(GetPrincipal)}: An exception has occurred: '{ex}'");
+            return Result<ClaimsPrincipal>.Failure($"{nameof(GetPrincipal)}: An exception has occurred: '{ex}'");
         }
     }
 
-    public ResultObject<string> GenerateToken(string userId, IDictionary<string, string> claims, int expireMinutes = 60)
+    public Result<string> GenerateToken(string userId, IDictionary<string, string> claims, int expireMinutes = 60)
     {
         if (String.IsNullOrWhiteSpace(userId))
         {
-            return ResultFactory.BadResult<string>($"{nameof(GenerateToken)}: User Id must be supplied");
+            return Result<string>.Failure($"{nameof(GenerateToken)}: User Id must be supplied");
         }
 
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secret));
@@ -125,6 +125,6 @@ public class JWTokenHelper(IConfiguration config) : IJWTokenHelper
         var stoken = tokenHandler.CreateToken(tokenDescriptor);
         var token = tokenHandler.WriteToken(stoken);
 
-        return ResultFactory.GoodResult<string>(token);
+        return Result<string>.Success(token);
     }
 }
