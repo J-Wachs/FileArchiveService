@@ -1,4 +1,4 @@
-﻿namespace FileArchive;
+﻿namespace FileArchive.Services;
 
 public class FileArchiveConstants
 {

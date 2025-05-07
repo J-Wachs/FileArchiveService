@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using FileArchive.Utils.Interfaces;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -47,51 +48,6 @@ public class JWTokenHelper(IConfiguration config) : IJWTokenHelper
         return Result<ClaimsPrincipal>.Success(resultPrincipal.Data);
     }
 
-    private Result<ClaimsPrincipal> GetPrincipal(string token)
-    {
-        try
-        {
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secret));
-
-            var tokenHandler = new JwtSecurityTokenHandler();
-            JwtSecurityToken? jwToken = null;
-
-            if (tokenHandler.ReadToken(token) is JwtSecurityToken workJWToken)
-            {
-                jwToken = workJWToken;
-            }
-            
-            if (jwToken is null)
-            {
-                return Result<ClaimsPrincipal>.Failure("Token cannot be read");
-            }
-
-            var validationParameters = new TokenValidationParameters()
-            {
-                RequireExpirationTime = true,
-                ValidateIssuer = true,
-                ValidateAudience = true,
-                IssuerSigningKey = securityKey,
-                ValidIssuer = _issuer,
-                ValidAudience = _audience
-            };
-
-            // The Tokenhandler convert by default between short and long name of claims. Disable it.
-            tokenHandler.InboundClaimTypeMap.Clear();
-            var principal = tokenHandler.ValidateToken(token, validationParameters, out SecurityToken securityToken);
-
-            return Result<ClaimsPrincipal>.Success(principal);
-        }
-        catch (SecurityTokenInvalidSignatureException ex)
-        {
-            return Result<ClaimsPrincipal>.Failure($"{nameof(GetPrincipal)}: Signature does not match: '{ex}'");
-        }
-        catch (Exception ex)
-        {
-            return Result<ClaimsPrincipal>.Failure($"{nameof(GetPrincipal)}: An exception has occurred: '{ex}'");
-        }
-    }
-
     public Result<string> GenerateToken(string userId, IDictionary<string, string> claims, int expireMinutes = 60)
     {
         if (String.IsNullOrWhiteSpace(userId))
@@ -126,5 +82,55 @@ public class JWTokenHelper(IConfiguration config) : IJWTokenHelper
         var token = tokenHandler.WriteToken(stoken);
 
         return Result<string>.Success(token);
+    }
+
+    /// <summary>
+    /// Gets claims from the Java Web Token.
+    /// </summary>
+    /// <param name="token">Toekn to read</param>
+    /// <returns>Claims in token</returns>
+    private Result<ClaimsPrincipal> GetPrincipal(string token)
+    {
+        try
+        {
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secret));
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            JwtSecurityToken? jwToken = null;
+
+            if (tokenHandler.ReadToken(token) is JwtSecurityToken workJWToken)
+            {
+                jwToken = workJWToken;
+            }
+
+            if (jwToken is null)
+            {
+                return Result<ClaimsPrincipal>.Failure("Token cannot be read");
+            }
+
+            var validationParameters = new TokenValidationParameters()
+            {
+                RequireExpirationTime = true,
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                IssuerSigningKey = securityKey,
+                ValidIssuer = _issuer,
+                ValidAudience = _audience
+            };
+
+            // The Tokenhandler convert by default between short and long name of claims. Disable it.
+            tokenHandler.InboundClaimTypeMap.Clear();
+            var principal = tokenHandler.ValidateToken(token, validationParameters, out SecurityToken securityToken);
+
+            return Result<ClaimsPrincipal>.Success(principal);
+        }
+        catch (SecurityTokenInvalidSignatureException ex)
+        {
+            return Result<ClaimsPrincipal>.Failure($"{nameof(GetPrincipal)}: Signature does not match: '{ex}'");
+        }
+        catch (Exception ex)
+        {
+            return Result<ClaimsPrincipal>.Failure($"{nameof(GetPrincipal)}: An exception has occurred: '{ex}'");
+        }
     }
 }

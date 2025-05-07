@@ -1,4 +1,7 @@
-﻿using FileArchive.Utils;
+﻿using FileArchive.Models;
+using FileArchive.Services;
+using FileArchive.Utils;
+using FileArchive.Utils.Interfaces;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Forms;
@@ -12,45 +15,91 @@ namespace FileArchive;
 
 public partial class FileArchiveList
 {
+	/// <summary>
+	/// Authentication information.
+	/// </summary>
 	[CascadingParameter]
 	private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
 
+	/// <summary>
+	/// Files to manage in the component.
+	/// </summary>
 	[Parameter]
-	public IList<FileArchiveFileInfoUI> Files { get; set; } = [];
+	public List<FileArchiveFileInfoUI> Files { get; set; } = [];
 
+	/// <summary>
+	/// The file types it is allowed to upload. Each file type must be stated with preceeding dot.
+	/// The file type must be seperated by comma, e.g.: .jpeg,.jpg,.png
+	/// </summary>
 	[Parameter]
 	public string? FileTypesAccepted { get; set; }
 
+	/// <summary>
+	/// Is user allowed to add files to the archive.
+	/// </summary>
 	[Parameter]
 	public bool AllowAdd { get; set; }
 
-	[Parameter]
+    /// <summary>
+    /// Is user allowed to delete files from the archive.
+    /// </summary>
+    [Parameter]
 	public bool AllowDelete { get; set; }
 
+    /// <summary>
+    /// Is user allowed to update information about files in the archive.
+    /// </summary>
 	[Parameter]
 	public bool AllowUpdate { get; set; }
 
-	[Parameter]
+    /// <summary>
+    /// Is user allowed to update information on files just added (not yet submitted).
+    /// </summary>
+    [Parameter]
 	public bool AllowUpdateOnNew { get; set; }
 
-	[Parameter]
+    /// <summary>
+    /// Is user allowed to download files.
+    /// </summary>
+    [Parameter]
 	public bool AllowDownload { get; set; }
 
+	/// <summary>
+	/// The number of files allowed in the archive for a given parent key.
+	/// Please note, that the file archive component does not handle the 
+	/// parent key, that is suppose to be done in the form submit method. 
+	/// </summary>
 	[Parameter]
 	public int AllowedNbrOfFiles { get; set; }
 
+	/// <summary>
+	/// Is user allowed to select more than one file to upload at a time.
+	/// </summary>
 	[Parameter]
 	public bool AllowSelectMultipleFiles { get; set; }
 
+	/// <summary>
+	/// Is the description of each file to be displayed. This apply when displaying
+	/// existing files and uploading new files.
+	/// </summary>
 	[Parameter]
 	public bool DisplayDescription { get; set; }
 
+	/// <summary>
+	/// Is the component to display existing files in the archive.
+	/// </summary>
 	[Parameter]
 	public bool DisplayExistingFiles { get; set; }
 
+	/// <summary>
+	/// The maximun size in bytes that the files added must be.
+	/// </summary>
 	[Parameter]
 	public long? MaxFileSize { get; set; }
 
+	/// <summary>
+	/// The height attribute of the file archive component. Default is 400 pixels.
+	/// </summary>
 	[Parameter]
 	public string Height { get; set; } = "400px";
 
@@ -64,7 +113,7 @@ public partial class FileArchiveList
     [Inject]
     IFileArchiveJWTokenHelperBuild? FileArchiveJWTokenHelperBuild { get; set; }
 
-
+	// Value used for user id if authentication attribute cannot be found.
 	private string _curUserId = "-1";
 
 	private long _maxFileSize;
@@ -116,32 +165,13 @@ public partial class FileArchiveList
         }
         else
         {
-            _maxFileSize = (long)MaxFileSize;
+            _maxFileSize = MaxFileSize.Value;
         }
 
-        if (string.IsNullOrEmpty(FileTypesAccepted) is false)
-        {
-            _fileTypesAccepted = FileTypesAccepted.ToLowerInvariant();
-        }
-
-        if (AllowUpdate || AllowUpdateOnNew)
-        {
-            _displayDescription = true;
-        }
-        else
-        {
-            _displayDescription = DisplayDescription;
-        }
-
-        if (AllowUpdate)
-        {
-            _displayExistingFiles = true;
-        }
-        else
-        {
-            _displayExistingFiles = DisplayExistingFiles;
-        }
-
+        _fileTypesAccepted = string.IsNullOrEmpty(FileTypesAccepted) is false ? FileTypesAccepted.ToLowerInvariant() : string.Empty;
+        _displayDescription = AllowUpdate || AllowUpdateOnNew ? true : DisplayDescription;
+        _displayExistingFiles = AllowUpdate ? true : DisplayExistingFiles;
+        
         await base.OnParametersSetAsync();
     }
 
@@ -176,7 +206,7 @@ public partial class FileArchiveList
 		{
 			// Files added by clicking on the button 'Add files' does not have an Id 
 			// in the list, hence this is the rule to display them.
-			var files = Files.Where(x => x.Id is null).Skip(request.StartIndex).Take(request.Count);
+			var files = Files.Where(x => x.Id is null).Skip(request.StartIndex).Take(request.Count).ToList();
 			return new(new ItemsProviderResult<FileArchiveFileInfoUI>(
 					   files,
 					   files.Count()));
@@ -214,6 +244,7 @@ public partial class FileArchiveList
 			}
 		}
 
+		// Add the files the user has added
 		foreach (var oneFile in e.GetMultipleFiles())
 		{
 			Files?.Add(new FileArchiveFileInfoUI
@@ -221,20 +252,34 @@ public partial class FileArchiveList
 				Filename = oneFile.Name,
 				Description = null,
 				Delete = false,
-				Update = false,
 				Insert = true,
+				Update = false,
 				File = oneFile
 			});
 		}
 
-		if (filesGrid is not null)
-		{
-			await filesGrid.RefreshDataAsync();
-		}
+		await RefreshData();
 	}
 
+    /// <summary>
+    /// Force the Virtualize component to update: 
+    /// </summary>
+    /// <returns></returns>
+    public async Task RefreshData()
+	{
+        if (filesGrid is not null)
+        {
+            await filesGrid.RefreshDataAsync();
+        }
+    }
 
-	private bool AreAllFilesAllowed(IReadOnlyList<IBrowserFile> browserFiles, out string errorMessage)
+	/// <summary>
+	/// Manage that files are of allowed type and have a max size allowed.
+	/// </summary>
+	/// <param name="browserFiles">Files from user</param>
+	/// <param name="errorMessage">Error message to be displayed</param>
+	/// <returns></returns>
+    private bool AreAllFilesAllowed(IReadOnlyList<IBrowserFile> browserFiles, out string errorMessage)
 	{
 		bool allFileTypesAllowed = AreAllFileTypesAllowed(browserFiles, out string ftErrorMessage);
 		bool allFileSizeAllowed = AreAllFilesSizesAllowed(browserFiles, out string fsErrorMessage);
@@ -249,8 +294,13 @@ public partial class FileArchiveList
 		return true;
 	}
 
-
-	private bool AreAllFileTypesAllowed(IReadOnlyList<IBrowserFile> browserFiles, out string errorMessage)
+    /// <summary>
+    /// Does all new files have the allowed extensions.
+    /// </summary>
+    /// <param name="browserFiles">Files from user</param>
+	/// <param name="errorMessage">Error message to be displayed</param>
+    /// <returns></returns>
+    private bool AreAllFileTypesAllowed(IReadOnlyList<IBrowserFile> browserFiles, out string errorMessage)
 	{
 		errorMessage = string.Empty;
 		bool atLeastOneInvalidFileType = false;
@@ -284,8 +334,13 @@ public partial class FileArchiveList
 		return !atLeastOneInvalidFileType;
 	}
 
-
-	private bool AreAllFilesSizesAllowed(IReadOnlyList<IBrowserFile> browserFiles, out string errorMessage)
+    /// <summary>
+    /// Does all files have a size allowed.
+    /// </summary>
+    /// <param name="browserFiles">Files from user</param>
+    /// <param name="errorMessage">Error message to be displayed</param>
+    /// <returns></returns>
+    private bool AreAllFilesSizesAllowed(IReadOnlyList<IBrowserFile> browserFiles, out string errorMessage)
 	{
 		errorMessage = string.Empty;
 		bool atLeastOneFileIsTooLarge = false;
@@ -316,7 +371,11 @@ public partial class FileArchiveList
 		return !atLeastOneFileIsTooLarge;
 	}
 
-
+	/// <summary>
+	/// Remove a file that was previously added by user, but has no been submitted yet.
+	/// </summary>
+	/// <param name="file">The new file to remove</param>
+	/// <returns></returns>
 	private async Task RemoveNewFile(FileArchiveFileInfoUI file)
 	{
 		var fileEntry = Files.SingleOrDefault(x =>
@@ -339,17 +398,25 @@ public partial class FileArchiveList
 		}
 	}
 
-
-	private static void DescriptionChanged(string value, FileArchiveFileInfoUI file)
+	/// <summary>
+	/// Update the description on a file in archive.
+	/// </summary>
+	/// <param name="newDescription">The new description</param>
+	/// <param name="file">The file that must have the new description</param>
+	private static void DescriptionChanged(string newDescription, FileArchiveFileInfoUI file)
 	{
-		file.Description = value;
+		file.Description = newDescription;
 		if (file.Insert is false)
 		{
 			file.Update = true;
 		}
 	}
 
-
+	/// <summary>
+	/// Download a file from the archive.
+	/// </summary>
+	/// <param name="file">The file to download</param>
+	/// <exception cref="Exception">In case of no info about file</exception>
 	private async void DownloadFile(FileArchiveFileInfoUI file)
 	{
 		if (Config is null || file is null || file.Id is null)
@@ -370,7 +437,11 @@ public partial class FileArchiveList
 		}
 	}
 
-
+	/// <summary>
+	/// Displays a JavaScript alert box with a message.
+	/// </summary>
+	/// <param name="message">The message to display</param>
+	/// <returns></returns>
     private async Task AlertDialog(string message)
     {
 		if (JSRuntime is not null)

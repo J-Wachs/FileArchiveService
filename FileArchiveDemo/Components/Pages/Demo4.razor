@@ -1,8 +1,11 @@
 ﻿@page "/demo4"
 @rendermode InteractiveServer
-@* Få styr på dette med InteractiveServer *@
-@using FileArchive
 @using System.ComponentModel.DataAnnotations
+@using FileArchive
+@using FileArchive.Interfaces
+@using FileArchive.Models
+@using FileArchive.Services
+@using FileArchive.Utils
 @inject IConfiguration config
 
 @inject IFileArchiveStorage fileArchiveStorage
@@ -23,6 +26,11 @@
 </ul>
 <br />
 
+@if (!string.IsNullOrEmpty(Message))
+{
+    <span style="color: red; font-weight: bold;">@Message</span>
+}
+
 <EditForm Model="DemoUIModel" OnValidSubmit="SubmitForm" class="form-control">
     <DataAnnotationsValidator />
     <ValidationSummary />
@@ -42,7 +50,7 @@
     <div class="form-group row">
         <label class="col-sm-2 col-form-label">Files:</label>
         <div class="col-sm-10">
-            <FileArchiveList Files="DemoUIModel.Files"
+            <FileArchiveList @ref="FileArchiveComponent" Files="DemoUIModel.Files"
                         FileTypesAccepted=".png,.jpg,.jpeg"
                         AllowSelectMultipleFiles="true"
                         AllowAdd="true"
@@ -63,6 +71,8 @@
 </EditForm>
 
 @code {
+    private FileArchiveList? FileArchiveComponent;
+    private string Message = string.Empty;
     private class DemoFieldsForUI
     {
         public string? Description { get; set; } = "Demo 4";
@@ -94,12 +104,21 @@
     }
 
 
-    protected override void OnAfterRender(bool firstRender)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (firstRender && fileArchiveCRUD is not null)
         {
             string parentKey = reportId.ToString();
-            DemoUIModel.Files = fileArchiveCRUD!.GetListOfFileInfoForArchive(parentKey);
+            Result<List<FileArchiveFileInfoUI>> getListOfFilesResult = await fileArchiveCRUD.GetListOfFileInfoUIForArchive(parentKey);
+            if (getListOfFilesResult.IsSuccess is false)
+            {
+                Message = String.Join(", ", getListOfFilesResult.Messages);
+            }
+            else
+            {
+                Message = string.Empty;
+                DemoUIModel.Files = getListOfFilesResult.Data!;
+            }
             StateHasChanged();
         }
 
@@ -125,6 +144,6 @@
 
         // Store files
         string parentKey = reportId.ToString();
-        var result = await fileArchiveCRUD!.CreateUpdateDeleteArchiveFromUI(parentKey, DemoUIModel.Files, userId);
+        var result = await fileArchiveCRUD!.CreateUpdateDeleteArchiveFromUI(parentKey, FileArchiveComponent!, userId);
     }
 }

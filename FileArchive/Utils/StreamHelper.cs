@@ -8,12 +8,20 @@ public sealed class StreamHelper : IDisposable
 {
     private Stream? stream = null;
 
-    public Stream CreateFileStream(Stream theStream)
+    /// <summary>
+    /// Stores the steam in this helper.
+    /// </summary>
+    /// <param name="theStream">The stream to manage</param>
+    /// <returns></returns>
+    public Stream SetFileStream(Stream theStream)
     {
         stream = theStream;
         return stream;
     }
 
+    /// <summary>
+    /// Dispose of the stream.
+    /// </summary>
     public void Dispose()
     {
         stream?.Dispose();

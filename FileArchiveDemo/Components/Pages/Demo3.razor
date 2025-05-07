@@ -1,8 +1,11 @@
 ﻿@page "/demo3"
 @rendermode InteractiveServer
-@* Få styr på dette med InteractiveServer *@
-@using FileArchive
 @using System.ComponentModel.DataAnnotations
+@using FileArchive
+@using FileArchive.Interfaces
+@using FileArchive.Models
+@using FileArchive.Services
+@using FileArchive.Utils
 @inject IConfiguration config
 
 @inject IFileArchiveStorage fileArchiveStorage
@@ -21,6 +24,11 @@
     <li>The two field Description and Date are not affected</li>
 </ul>
 <br />
+
+@if (!string.IsNullOrEmpty(Message))
+{
+    <span style="color: red; font-weight: bold;">@Message</span>
+}
 
 <EditForm Model="DemoUIModel" OnValidSubmit="SubmitForm" class="form-control">
     <DataAnnotationsValidator />
@@ -41,7 +49,7 @@
     <div class="form-group row">
         <label class="col-sm-2 col-form-label">Files:</label>
         <div class="col-sm-10">
-            <FileArchiveList Files="DemoUIModel.Files"
+            <FileArchiveList @ref="FileArchiveComponent" Files="DemoUIModel.Files"
                         AllowAdd="false"
                         AllowUpdate="false"
                         AllowDownload="true"
@@ -60,12 +68,14 @@
 </EditForm>
 
 @code {
+    private FileArchiveList? FileArchiveComponent;
+    private string Message = string.Empty;
     private class DemoFieldsForUI
     {
         public string? Description { get; set; } = "Demo 3";
         public DateTime Date { get; set; } = DateTime.Now.Date;
 
-        public IList<FileArchiveFileInfoUI> Files { get; set; }
+        public List<FileArchiveFileInfoUI> Files { get; set; }
 
         public DemoFieldsForUI()
         {
@@ -91,12 +101,21 @@
     }
 
 
-    protected override void OnAfterRender(bool firstRender)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (firstRender && fileArchiveCRUD is not null)
         {
             string parentKey = reportId.ToString();
-            DemoUIModel.Files = fileArchiveCRUD!.GetListOfFileInfoForArchive(parentKey);
+            Result<List<FileArchiveFileInfoUI>> getListOfFilesResult = await fileArchiveCRUD.GetListOfFileInfoUIForArchive(parentKey);
+            if (getListOfFilesResult.IsSuccess is false)
+            {
+                Message = String.Join(", ", getListOfFilesResult.Messages);
+            }
+            else
+            {
+                Message = string.Empty;
+                DemoUIModel.Files = getListOfFilesResult.Data!;
+            }
             StateHasChanged();
         }
 
@@ -124,7 +143,7 @@
         string parentKey = reportId.ToString();
 
         // Set in comment, as no action is allowed. If it was active, it would do nothing.
-        // var result = await fileArchiveCRUD!.CreateUpdateDeleteArchiveFromUI(parentKey, DemoUIModel.Files);
+        //var result = await fileArchiveCRUD!.CreateUpdateDeleteArchiveFromUI(parentKey, FileArchiveComponent, userId);
         await Task.CompletedTask;
         return;
     }

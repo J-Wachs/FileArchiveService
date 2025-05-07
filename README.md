@@ -9,7 +9,7 @@ an order number or something completly different.
 
 The visual component can be configured to match the needs in the specific case.
 
-The service has been developed in .NET 8.
+The service has been developed in .NET 9.
 
 ## Fully functional example project
 
@@ -59,6 +59,7 @@ decide how files are to be stored. There are to classes for that. One that will 
 and one that will store the files in Azure Blob storage. Then you need to add a number of services to the Program.cs in
 your main project. Example from demo project:
 
+```
 // Added for FileArchive:
 builder.Services.AddControllers();
 builder.Services.AddScoped<IFileArchiveStorage, FileArchiveStorageFolder>();
@@ -67,6 +68,7 @@ builder.Services.AddScoped<IFileArchiveFileInfoCRUD, FileArchiveFileInfoCRUDJSON
 //builder.Services.AddScoped<IFileArchiveFileInfoCRUD, FileArchiveFileInfoCRUDDB>();
 builder.Services.AddScoped<IJWTokenHelper, JWTokenHelper>();
 builder.Services.AddScoped<IFileArchiveJWTokenHelper, FileArchiveJWTokenHelper>();
+```
 
 The two services at bottom, are for the Java Web Token security that is used when downloading files.
 
