@@ -1,6 +1,9 @@
-using FileArchive;
 using FileArchive.DataAccess;
+using FileArchive.DataAccess.Interfaces;
+using FileArchive.Interfaces;
+using FileArchive.Services;
 using FileArchive.Utils;
+using FileArchive.Utils.Interfaces;
 using FileArchiveDemo.Components;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Azure;
@@ -22,14 +25,12 @@ builder.Services.AddScoped<IJWTokenHelper, JWTokenHelper>();
 builder.Services.AddScoped<IFileArchiveJWTokenHelperBuild, FileArchiveJWTokenHelperBuild>();
 builder.Services.AddScoped<IFileArchiveJWTokenHelperRead, FileArchiveJWTokenHelperRead>();
 
-builder.Services.AddDbContext<FileArchiveContext>(options =>
+builder.Services.AddDbContext<IFileArchiveContext, FileArchiveContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("Default"));
 });
 builder.Services.AddAzureClients(clientBuilder =>
 {
-    clientBuilder.AddBlobServiceClient(builder.Configuration["storageConnectionString:blob"]!, preferMsi: true);
-    clientBuilder.AddQueueServiceClient(builder.Configuration["storageConnectionString:queue"]!, preferMsi: true);
 });
 // End
 

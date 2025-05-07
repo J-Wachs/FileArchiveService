@@ -2,10 +2,10 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
-namespace FileArchive.DataAccess;
+namespace FileArchive.DataAccess.Interfaces;
 
 /// <summary>
-/// Demo dbContext for this File Archive service demo project
+/// Db context for this File Archive service project
 /// </summary>
 public interface IFileArchiveContext
 {
@@ -16,5 +16,5 @@ public interface IFileArchiveContext
 
     EntityEntry Entry(object entity);
 
-    int SaveChanges();
+    Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

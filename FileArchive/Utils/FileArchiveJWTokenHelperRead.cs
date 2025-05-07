@@ -1,4 +1,6 @@
-﻿namespace FileArchive.Utils;
+﻿using FileArchive.Utils.Interfaces;
+
+namespace FileArchive.Utils;
 
 public class FileArchiveJWTokenHelperRead(IJWTokenHelper jwTokenHelper) : IFileArchiveJWTokenHelperRead
 {
@@ -7,21 +9,20 @@ public class FileArchiveJWTokenHelperRead(IJWTokenHelper jwTokenHelper) : IFileA
 
     public record UserIdAndFileIdDTO(long UserId, long FileId);
 
-
-    public UserIdAndFileIdDTO GetUserIdAndFileIdFromJWToken(string jwToken)
+    public Result<UserIdAndFileIdDTO?> GetUserIdAndFileIdFromJWToken(string jwToken)
     {
         var result = jwTokenHelper.ValidateToken(jwToken);
         if (result.IsSuccess is false)
         {
-            throw new InvalidOperationException();
+            return Result<UserIdAndFileIdDTO?>.Failure(result.Messages);
         }
 
-        var temp = result.Data!.Claims.First(x => x.Type == JWTokenHelper.JWTClaimSubject).Value;
-        long userId = long.Parse(temp);
+        var claim = result.Data!.Claims.First(x => x.Type == JWTokenHelper.JWTClaimSubject).Value;
+        long userId = long.Parse(claim);
 
-        temp = result.Data.Claims.First(x => x.Type == JWTFileId).Value;
-        long fileId = long.Parse(temp);
+        claim = result.Data.Claims.First(x => x.Type == JWTFileId).Value;
+        long fileId = long.Parse(claim);
 
-        return new UserIdAndFileIdDTO(userId, fileId);
+        return Result<UserIdAndFileIdDTO?>.Success(new UserIdAndFileIdDTO(userId, fileId));
     }
 }
