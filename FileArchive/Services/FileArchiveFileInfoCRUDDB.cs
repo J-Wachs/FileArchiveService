@@ -10,11 +10,14 @@ namespace FileArchive.Services;
 /// Class for maintaining FileInfo data in a table using Entity Framework.
 /// This class is for a production environment.
 /// </summary>
-public class FileArchiveFileInfoCRUDDB(IFileArchiveContext dbContext) : IFileArchiveFileInfoCRUD
+public class FileArchiveFileInfoCRUDDB(
+    ILogger<FileArchiveFileInfoCRUDDB> logger,
+    IFileArchiveContext dbContext
+    ) : IFileArchiveFileInfoCRUD
 {
     public async ValueTask<Result> CreateFileInfo(FileArchiveInfo fileInfo, string userId)
     {
-        string methodName = $"{nameof(CreateFileInfo)}", paramList = $"(fileInfo, '{userId}')";
+        string methodName = nameof(CreateFileInfo), paramList = "(fileInfo, userId)";
 
         try
         {
@@ -30,14 +33,14 @@ public class FileArchiveFileInfoCRUDDB(IFileArchiveContext dbContext) : IFileArc
         }
         catch (Exception ex)
         {
-            return Result.Failure($"Error occurred in '{methodName}', The error is: '{ex}'.");
-        
+            logger.LogCritical("Error in '{methodName}{paramList}'. The error is: 'Exception occurred '{ex}''.", methodName, paramList, ex);
+            return Result.Fatal($"An error occurred.");
         }
     }
 
     public async ValueTask<Result> UpdateFileInfo(FileArchiveInfo fileInfo, string userId)
     {
-        string methodName = $"{nameof(UpdateFileInfo)}", paramList = $"(fileInfo, '{userId}')";
+        string methodName = $"{nameof(UpdateFileInfo)}", paramList = "(fileInfo, userId)";
 
         try
         {
@@ -46,7 +49,8 @@ public class FileArchiveFileInfoCRUDDB(IFileArchiveContext dbContext) : IFileArc
 
             var entity = dbContext.Entry(fileInfo);
 
-            if (entity is not null) // This has been done, because I use MOQ to test.
+            // This has been done, because I use MOQ to test.
+            if (entity is not null)
             {
                 entity.State = EntityState.Modified;
             }
@@ -58,32 +62,32 @@ public class FileArchiveFileInfoCRUDDB(IFileArchiveContext dbContext) : IFileArc
         }
         catch (Exception ex)
         {
-            return Result.Failure($"Error occurred in '{methodName}', The error is: '{ex}'.");
+            logger.LogCritical("Error in '{methodName}{paramList}'. The error is: 'Exception occurred '{ex}''.", methodName, paramList, ex);
+            return Result.Fatal($"An error occurred");
         }
     }
 
     public async ValueTask<Result> DeleteFileInfo(long id)
     {
-        string methodName = $"{nameof(DeleteFileInfo)}", paramList = $"({id})";
+        string methodName = nameof(DeleteFileInfo), paramList = $"({id})";
 
         try
         {
             var fileInfo = await dbContext.FileArchiveInfos.SingleOrDefaultAsync(x => x.Id == id);
-            if (fileInfo is not null)
+            if (fileInfo is null)
             {
-                var res = dbContext.FileArchiveInfos.Remove(fileInfo);
-                await dbContext.SaveChangesAsync();
+                return Result.FailureNotFound($"Error occurred in '{methodName}', The error is: 'FileArchiveInfos record with id '{id}' is not found'.");
+            }
 
-                return Result.Success();
-            }
-            else
-            {
-                return Result.Failure($"Error occurred in '{methodName}', The error is: 'FileArchiveInfos record with id '{id}' is not found'.");
-            }
+            var res = dbContext.FileArchiveInfos.Remove(fileInfo);
+            await dbContext.SaveChangesAsync();
+
+            return Result.Success();
         }
         catch (Exception ex)
         {
-            return Result.Failure($"Error occurred in '{methodName}', The error is: '{ex}'.");
+            logger.LogCritical("Error in '{methodName}{paramList}'. The error is: 'Exception occurred '{ex}''.", methodName, paramList, ex);
+            return Result.Fatal($"An error occurred");
         }
     }
 
@@ -97,17 +101,15 @@ public class FileArchiveFileInfoCRUDDB(IFileArchiveContext dbContext) : IFileArc
 
     public async ValueTask<Result<FileArchiveInfo?>> GetFileInfoById(long id)
     {
-        string methodName = $"{nameof(GetFileInfoById)}", paramList = $"({id})";
+        string methodName = $"{nameof(GetFileInfoById)}";
 
         var record = await dbContext.FileArchiveInfos.SingleOrDefaultAsync(x => x.Id == id);
 
         if (record is null)
         {
-            return Result<FileArchiveInfo?>.Failure($"Error occurred in '{methodName}', The error is: 'Record with key '´{id}' does not exist'.");
+            return Result<FileArchiveInfo?>.FailureNotFound($"Error occurred in '{methodName}', The error is: 'Record with key '´{id}' does not exist'.");
         }
-        else
-        {
-            return Result<FileArchiveInfo?>.Success(record);
-        }
+
+        return Result<FileArchiveInfo?>.Success(record);
     }
 }

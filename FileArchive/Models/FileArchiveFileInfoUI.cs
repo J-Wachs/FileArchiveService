@@ -15,8 +15,20 @@ public class FileArchiveFileInfoUI
     public string? CreatedBy { get; set; }
     public DateTime? LastModified { get; set; }
     public string? LastModifiedBy { get; set; }
+    /// <summary>
+    /// Is file to be updated?
+    /// </summary>
     public bool Update { get; set; }
+    /// <summary>
+    /// Is file to be deleted?
+    /// </summary>
     public bool Delete { get; set; }
+    /// <summary>
+    /// Is file to be inserted?
+    /// </summary>
     public bool Insert { get; set; }
+    /// <summary>
+    /// Information about the actual file.
+    /// </summary>
     public IBrowserFile? File { get; set; }
 }

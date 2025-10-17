@@ -11,6 +11,23 @@ The visual component can be configured to match the needs in the specific case.
 
 The service has been developed in .NET 9.
 
+## What's new
+Version 2.0:
+* Changed license to Unlicense
+* Added option for delay of files in order for antivirus scanning (AV installed on the server, not a part of this
+ service) to take place before the files are available for download. UI component and download controller changed
+ accordingly. See appsettings.json for configuration
+* Return type of controller changed to IResult and code changes to support that
+* Result class updated to allow for more detailed reason for errors and allowing APIs to return HTTP status codes
+* FileArchiveList component now returns error messages to the EditForm validation detail and summary
+* FileArchiveList component can be used outside an EditForm. Error messages are then displayed in a dialog box
+* Logger has been added to various classes
+* Spelling mistakes corrected
+* Upgraded NuPkgs to latest version
+
+Version 1.0:
+* Initial version
+
 ## Fully functional example project
 
 This repo contains a project that is the actual components, it's support classes and a demo project, where you can see
@@ -90,7 +107,9 @@ Please note that depending on the config of the File Archive component, the user
 
 Allowing users to upload files opens a risk of virus infected files entering your system. You should definitely consider
 extending the upload part, have it call a virus scanner. Which method that is the right one for you, is something that
-you must figure out.
+you must figure out. In version 2, a delay option has been added, in order for the virus scanner on the server to do
+it's work. While the delay is on, the files are not available for download. The text 'To be released'. When the timeout 
+occurrs, the files are made available for download.
 
 There are services that expose a virus scanner API that you can call. When using the option to store files on a folder,
 make sure that the virus scanner on the server scans the folder in question.
@@ -107,7 +126,8 @@ Please create an issue in the repo.
 ## Known issues (Work in progress)
 
 ### No virus scanner integration
-File Archive does not have any virus scanner integration build in. Do not expect for one to come.
+File Archive does not have any virus scanner integration build in. Do not expect for one to come. However, you can set
+a delay in making files available for download, in order for your virus scanner to do it's work. See appsettings.json.
 
 ### Authorized users and Java Web Token for download API
 The JWT made for the download to protect the API, simply receives the user identification, it is not validated. If you 

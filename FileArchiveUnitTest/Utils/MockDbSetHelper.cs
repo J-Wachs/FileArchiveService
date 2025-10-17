@@ -6,7 +6,7 @@ using System.Linq.Expressions;
 namespace YourNamespace.TestUtils;
 
 /// <summary>
-/// Helper class that provide *Async() Entity Framework methods for in Moq.
+/// Helper class that provide *Async() Entity Framework methods for Moq.
 /// </summary>
 public static class MockDbSetHelper
 {

@@ -43,7 +43,7 @@ public class FileArchiveCRUD(IFileArchiveFileInfoCRUD fileArchiveFileInfoCRUD, I
         Result<IList<FileArchiveInfo>?> getListResult = await fileArchiveFileInfoCRUD.GetListOfFileInfoByParentKey(parentKey);
         if (getListResult.IsSuccess is false)
         {
-            return Result<List<FileArchiveFileInfoUI>>.Failure(getListResult.Messages);
+            return Result<List<FileArchiveFileInfoUI>>.CopyResult(getListResult);
         }
 
         List<FileArchiveFileInfoUI> listOfFilesForUI = [];
