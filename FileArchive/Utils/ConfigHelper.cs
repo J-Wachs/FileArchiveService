@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
-
-namespace FileArchive.Utils;
+﻿namespace FileArchive.Utils;
 
 internal static class ConfigHelper
 {

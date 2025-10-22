@@ -14,7 +14,7 @@ public class FileArchiveJWTokenHelperRead(IJWTokenHelper jwTokenHelper) : IFileA
         var result = jwTokenHelper.ValidateToken(jwToken);
         if (result.IsSuccess is false)
         {
-            return Result<UserIdAndFileIdDTO?>.Failure(result.Messages);
+            return Result<UserIdAndFileIdDTO?>.CopyResult(result);
         }
 
         var claim = result.Data!.Claims.First(x => x.Type == JWTokenHelper.JWTClaimSubject).Value;

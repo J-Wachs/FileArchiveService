@@ -1,7 +1,6 @@
 ﻿using FileArchive.Interfaces;
 using FileArchive.Utils;
 using Microsoft.AspNetCore.Components.Forms;
-using Microsoft.Extensions.Configuration;
 
 namespace FileArchive.Services;
 
@@ -13,29 +12,45 @@ namespace FileArchive.Services;
 public class FileArchiveStorageFolder : IFileArchiveStorage
 {
     private readonly string? _targetPath;
+    private readonly int _secondsBeforeReleaseFile;
+    private readonly ILogger<FileArchiveStorageFolder> _logger;
+    private readonly IFileArchiveFileInfoCRUD _fileInfoCRUD;
     private long _maxFileSize;
 
-    public FileArchiveStorageFolder(IConfiguration config)
+    public FileArchiveStorageFolder(ILogger<FileArchiveStorageFolder> logger, IConfiguration config, IFileArchiveFileInfoCRUD fileInfoCRUD)
     {
         _maxFileSize = ConfigHelper.GetMustExistConfigValue<long>(config, FileArchiveConstants.ConfigMaxFileSize);
         _targetPath = ConfigHelper.GetMustExistConfigValue<string>(config, FileArchiveConstants.ConfigPath);
-        if (Path.Exists(_targetPath) is false)
+        if (string.IsNullOrEmpty(_targetPath) || Path.Exists(_targetPath) is false)
         {
             throw new DirectoryNotFoundException(_targetPath);
         }
+        _secondsBeforeReleaseFile = config.GetValue<int>(FileArchiveConstants.ConfigSecondsBeforeReleaseOfFile, 0);
+        _logger = logger;
+        _fileInfoCRUD = fileInfoCRUD;
     }
 
     public async ValueTask<Result<Stream?>> OpenStoredFile(long id)
     {
-        string methodName = $"{nameof(OpenStoredFile)}", paramList = $"({id})";
+        string methodName = nameof(OpenStoredFile), paramList = $"({id})";
 
         try
         {
-            if (_targetPath is null)
+            var getFileInfoByIdResult = await _fileInfoCRUD.GetFileInfoById(id);
+            if (getFileInfoByIdResult.IsSuccess is false)
             {
-                return Result<Stream?>.Failure($"Error occurred in '{methodName}', The error is: 'The TargetPath is not defined'.");
+                return Result<Stream?>.CopyResult(getFileInfoByIdResult);
             }
-            var filePath = Path.Combine(_targetPath, id.ToString());
+
+            var fileInfo = getFileInfoByIdResult.Data!;
+            var fileReleaseDateTime = fileInfo.Created.AddSeconds(_secondsBeforeReleaseFile);
+
+            if (fileReleaseDateTime > DateTime.Now)
+            {
+                return Result<Stream?>.FailureForbidden($"The file with Id {id}, has not yet been released. It will be released at {fileReleaseDateTime}.");
+            }
+
+            var filePath = Path.Combine(_targetPath!, id.ToString());
 
             FileStream fileStream = new(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
             await Task.CompletedTask;
@@ -43,13 +58,14 @@ public class FileArchiveStorageFolder : IFileArchiveStorage
         }
         catch (Exception ex)
         {
-            return Result<Stream?>.Failure($"Error occurred in '{methodName}{paramList}', The error is: '{ex}'.");
+            _logger.LogCritical("Error occurred in '{methodName}{paramList}'. The error is: 'Exception occurred '{ex}''.", methodName, paramList, ex);
+            return Result<Stream?>.Fatal("An error occurred");
         }
     }
 
     public Result CloseStoredFile(Stream stream)
     {
-        string methodName = $"{nameof(CloseStoredFile)}", paramList = "(stream)";
+        string methodName = nameof(CloseStoredFile), paramList = $"(stream)";
 
         try
         {
@@ -58,22 +74,18 @@ public class FileArchiveStorageFolder : IFileArchiveStorage
         }
         catch (Exception ex)
         {
-            return Result.Failure($"Error occurred in '{methodName}{paramList}', The error is: '{ex}'.");
+            _logger.LogCritical("Error occurred in '{methodName}{paramList}'. The error is: 'Exception occurred '{ex}''.", methodName, paramList, ex);
+            return Result.Fatal($"An error occurred");
         }
     }
 
     public async ValueTask<Result> StoreFile(long id, IBrowserFile file)
     {
-        string methodName = $"{nameof(StoreFile)}", paramList = $"({id}, file)";
+        string methodName = nameof(StoreFile), paramList = $"({id}, file)";
 
         try
         {
-            if (_targetPath is null)
-            {
-                return Result.Failure($"Error occurred in '{methodName}', The error is: 'The TargetPath is not defined'.");
-            }
-
-            var filePath = Path.Combine(_targetPath, id.ToString());
+            var filePath = Path.Combine(_targetPath!, id.ToString());
 
             await using FileStream output = new(filePath, FileMode.Create);
             await file.OpenReadStream(_maxFileSize).CopyToAsync(output);
@@ -82,30 +94,29 @@ public class FileArchiveStorageFolder : IFileArchiveStorage
         }
         catch (Exception ex)
         {
-            return Result.Failure($"Error occurred in '{methodName}{paramList}', The error is: '{ex}'.");
+            _logger.LogCritical("Error occurred in '{methodName}{paramList}'. The error is: 'Exception occurred '{ex}''.", methodName, paramList, ex);
+            return Result.Fatal("An error occurred");
         }
     }
 
     public async ValueTask<Result> DeleteStoredFile(long id)
     {
-        string methodName = $"{nameof(DeleteStoredFile)}", paramList = $"({id})";
+        string methodName = nameof(DeleteStoredFile), paramList = $"({id})";
 
         try
         {
             await Task.Run(() =>
             {
-                if (_targetPath is not null)
-                {
-                    var filePath = Path.Combine(_targetPath, id.ToString());
-                    File.Delete(filePath);
-                }
+                var filePath = Path.Combine(_targetPath!, id.ToString());
+                File.Delete(filePath);
             });
 
             return Result.Success();
         }
         catch (Exception ex)
         {
-            return Result.Failure($"Error occurred in '{methodName}{paramList} ', The error is: '{ex}'.");
+            _logger.LogCritical("Error occurred in '{methodName}{paramList}'. The error is: 'Exception occurred '{ex}''.", methodName, paramList, ex);
+            return Result.Fatal("An error occurred");
         }
     }
 

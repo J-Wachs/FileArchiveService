@@ -3,15 +3,14 @@ using FileArchive.Utils.Interfaces;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Forms;
-using Microsoft.AspNetCore.Components.Web.Virtualization;
 using Microsoft.JSInterop;
 using System.Data;
 using System.Security.Claims;
 
 namespace FileArchive;
 
-public partial class FileArchiveList(
-    ILogger<FileArchiveList> logger
+public partial class FileArchiveCards(
+    ILogger<FileArchiveCards> logger
     ) : IDisposable
 {
     /// <summary>
@@ -127,20 +126,14 @@ public partial class FileArchiveList(
     private bool _displayExistingFiles;
     private int _secondsBeforeReleaseOfFile = 0;
     private ValidationMessageStore? _messageStore;
-
     private DateTime _earlistReleaseOfFile = DateTime.Now;
-
-    // New field for the timer.
     private Timer? _reloadTimer;
-
-    private Virtualize<FileArchiveFileInfoUI>? filesGrid;
-
 
     protected override async Task OnInitializedAsync()
     {
         if (Config is not null)
         {
-            _secondsBeforeReleaseOfFile = Config.GetValue<int>("FileArchive:SecondsBeforeReleaseOfFile", 0); // Using a sample key
+            _secondsBeforeReleaseOfFile = Config.GetValue("FileArchive:SecondsBeforeReleaseOfFile", 0);
         }
 
         if (CurrentEditContext is not null)
@@ -151,7 +144,6 @@ public partial class FileArchiveList(
         if (AuthenticationStateTask is not null)
         {
             var authState = await AuthenticationStateTask;
-
             if (DoesAuthStateHaveUser(authState))
             {
                 if (IsUserAuthenticatedAndHaveClaims(authState))
@@ -237,65 +229,13 @@ public partial class FileArchiveList(
     }
 
     /// <summary>
-    /// Retrieves a subset of file archive entries based on the provided request parameters,
+    /// Force the component to re-render.
     /// </summary>
-    /// <param name="request"></param>
-    /// <returns></returns>
-    private ValueTask<ItemsProviderResult<FileArchiveFileInfoUI>> GetRows(ItemsProviderRequest request)
+    public Task RefreshData()
     {
-        // We need to recalculate this field every time files are loaded,
-        if (Config is not null)
-        {
-            _earlistReleaseOfFile = DateTime.Now.AddSeconds(-_secondsBeforeReleaseOfFile);
-        }
-
-        // Stop and dispose any existing timer, as we are about to recalculate.
-        _reloadTimer?.Dispose();
-
-        // Find the latest file that is not yet "released".
-        var newestUnreleasedFile = Files
-            .Where(f => f.Created > _earlistReleaseOfFile)
-            .OrderByDescending(f => f.Created)
-            .FirstOrDefault();
-
-        if (newestUnreleasedFile is not null && newestUnreleasedFile.Created is not null)
-        {
-            // Calculate the exact time when the file will be released.
-            var releaseTime = newestUnreleasedFile.Created.Value.AddSeconds(_secondsBeforeReleaseOfFile);
-
-            // Calculate the remaining time until release.
-            var delay = releaseTime - DateTime.Now;
-
-            if (delay > TimeSpan.Zero)
-            {
-                // Start a new one-shot timer that will call RefreshData after the calculated delay.
-                _reloadTimer = new Timer(async _ =>
-                {
-                    await RefreshData();
-                    // We must invoke StateHasChanged on the component's synchronization context
-                    // because the timer callback executes on a background thread.
-                    await InvokeAsync(StateHasChanged);
-                }, null, delay, Timeout.InfiniteTimeSpan); // Use Timeout.InfiniteTimeSpan to ensure it only runs once.
-            }
-        }
-
-        if (_displayExistingFiles)
-        {
-            return new(new ItemsProviderResult<FileArchiveFileInfoUI>(
-                Files.Skip(request.StartIndex).Take(request.Count),
-                           Files.Count));
-        }
-
-        // Files added by clicking on the button 'Add files' does not have an Id 
-        // in the list, hence this is the rule to display them.
-        var files = Files
-            .Where(x => x.Id is null)
-            .Skip(request.StartIndex)
-            .Take(request.Count)
-            .ToList();
-        return new(new ItemsProviderResult<FileArchiveFileInfoUI>(
-                   files,
-                   files.Count));
+        // StateHasChanged() is the correct way to force a UI update for @foreach.
+        StateHasChanged();
+        return Task.CompletedTask;
     }
 
     /// <summary>
@@ -306,9 +246,9 @@ public partial class FileArchiveList(
     /// selected files meet the allowed size and type constraints. If validation fails, an error message is sent, and
     /// the operation is aborted. </item> <item> Ensures that the total number of files, including the newly selected
     /// ones, does not exceed the allowed limit. If the limit is exceeded, an error message is sent, and the operation
-    /// is aborted. </item> <item> Adds valid files to the file archive, setting their metadata such as creation
-    /// timestamp and upload status. </item> </list> After processing, the method refreshes the data to reflect the
-    /// updated file archive.</remarks>
+    /// is aborted. </item> <item> Adds valid files to the file archive with metadata such as creation timestamp and
+    /// file name. </item> </list> After processing, the method refreshes the data to reflect the updated file
+    /// archive.</remarks>
     /// <param name="eventArgs">The event arguments containing the files selected by the user.</param>
     private async void GetFilesToUpload(InputFileChangeEventArgs eventArgs)
     {
@@ -347,25 +287,11 @@ public partial class FileArchiveList(
         await RefreshData();
     }
 
-    /// <summary>
-    /// Force the Virtualize component to update: 
-    /// </summary>
-    /// <returns></returns>
-    public async Task RefreshData()
-    {
-        if (filesGrid is not null)
-        {
-            await filesGrid.RefreshDataAsync();
-        }
-    }
-
-    /// <summary>
-    /// New method to dispose the timer when the component is removed.
-    /// </summary>
+    // New method to dispose the timer when the component is removed.
     public void Dispose()
     {
         _reloadTimer?.Dispose();
-        GC.SuppressFinalize(this);
+        GC.SuppressFinalize(this); 
     }
 
     /// <summary>
@@ -393,7 +319,7 @@ public partial class FileArchiveList(
     /// Does all new files have the allowed extensions.
     /// </summary>
     /// <param name="browserFiles">Files from user</param>
-	/// <param name="errorMessage">Error message to be displayed</param>
+    /// <param name="errorMessage">Error message to be displayed</param>
     /// <returns></returns>
     private bool AreAllFileTypesAllowed(IReadOnlyList<IBrowserFile> browserFiles, out string errorMessage)
     {
@@ -429,6 +355,7 @@ public partial class FileArchiveList(
 
         return !atLeastOneInvalidFileType;
     }
+
 
     /// <summary>
     /// Does all files have a size allowed.
@@ -474,25 +401,13 @@ public partial class FileArchiveList(
     /// <returns></returns>
     private async Task RemoveNewFile(FileArchiveFileInfoUI file)
     {
-        var fileEntry = Files.SingleOrDefault(x =>
-        {
-            IBrowserFile? file1 = file?.File;
-            if (x is null || x.File is null)
-            {
-                return false;
-            }
-            return x.File.Equals(file1);
-        });
+        var fileEntry = Files.SingleOrDefault(x => x.File != null && x.File.Equals(file.File));
 
         if (fileEntry is not null)
         {
             Files.Remove(fileEntry);
         }
-
-        if (filesGrid is not null)
-        {
-            await filesGrid.RefreshDataAsync();
-        }
+        await RefreshData();
     }
 
     /// <summary>
@@ -508,6 +423,7 @@ public partial class FileArchiveList(
             file.Update = true;
         }
     }
+
 
     /// <summary>
     /// Download a file from the archive.
@@ -590,6 +506,61 @@ public partial class FileArchiveList(
         else
         {
             logger.LogCritical("Error in '{methodName}{paramList}'. The error is: 'CurrentEditContext is null'.", methodName, paramList);
+        }
+    }
+
+    /// <summary>
+    /// The calculated property that replaces the filtering logic from GetRows.
+    /// The @foreach loop in the razor file will iterate over this.
+    /// </summary>
+    private IEnumerable<FileArchiveFileInfoUI> FilesToDisplay
+    {
+        get
+        {
+            // The timer setup is called here to preserve the original logic
+            // of re-evaluating the timer whenever the view is rendered.
+            if (Files is null)
+            {
+                return [];
+            }
+
+            SetupReloadTimer();
+
+            if (_displayExistingFiles)
+            {
+                return Files;
+            }
+            return Files.Where(x => x.Id is null);
+        }
+    }
+
+    /// <summary>
+    /// This method contains the timer logic, extracted from the old GetRows method. 
+    /// </summary>
+    private void SetupReloadTimer()
+    {
+        if (Config is not null)
+        {
+            _earlistReleaseOfFile = DateTime.Now.AddSeconds(-_secondsBeforeReleaseOfFile);
+        }
+        _reloadTimer?.Dispose();
+
+        var newestUnreleasedFile = Files
+            .Where(f => f.Created > _earlistReleaseOfFile)
+            .OrderByDescending(f => f.Created)
+            .FirstOrDefault();
+
+        if (newestUnreleasedFile is not null && newestUnreleasedFile.Created is not null)
+        {
+            var releaseTime = newestUnreleasedFile.Created.Value.AddSeconds(_secondsBeforeReleaseOfFile);
+            var delay = releaseTime - DateTime.Now;
+            if (delay > TimeSpan.Zero)
+            {
+                _reloadTimer = new Timer(async _ =>
+                {
+                    await InvokeAsync(StateHasChanged);
+                }, null, delay, Timeout.InfiniteTimeSpan);
+            }
         }
     }
 }

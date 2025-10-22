@@ -1,4 +1,4 @@
-﻿@page "/demo5"
+﻿@page "/demo5cards"
 @rendermode InteractiveServer
 @using System.ComponentModel.DataAnnotations
 @using FileArchive
@@ -55,7 +55,7 @@
     <div class="form-group row">
         <label for="demouimodel-files" class="col-sm-2 col-form-label">Files:</label>
         <div class="col-sm-10">
-            <FileArchiveList @ref="FileArchiveComponent" Files="DemoUIModel.Files"
+            <FileArchiveCards @ref="FileArchiveComponent" Files="DemoUIModel.Files"
                         FileTypesAccepted=".png,.jpg,.jpeg"
                         AllowSelectMultipleFiles="false"
                         AllowAdd="true"
@@ -68,7 +68,7 @@
                         MaxFileSize="20000"
                         AllowedNbrOfFiles="3"
                         Height="300px">
-            </FileArchiveList>
+            </FileArchiveCards>
             <ValidationMessage For="@(() => DemoUIModel.Files)" />
         </div>
     </div>
@@ -80,11 +80,11 @@
 </EditForm>
 
 @code {
-    private FileArchiveList? FileArchiveComponent;
+    private FileArchiveCards? FileArchiveComponent;
     private string Message = string.Empty;
     private class DemoFieldsForUI
     {
-        public string? Description { get; set; } = "Demo 5";
+        public string? Description { get; set; } = "Demo 5 Cards";
         public DateTime Date { get; set; } = DateTime.Now.Date;
 
         public List<FileArchiveFileInfoUI> Files { get; set; }

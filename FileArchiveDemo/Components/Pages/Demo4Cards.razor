@@ -1,4 +1,4 @@
-﻿@page "/demo5"
+﻿@page "/demo4cards"
 @rendermode InteractiveServer
 @using System.ComponentModel.DataAnnotations
 @using FileArchive
@@ -11,22 +11,20 @@
 @inject IFileArchiveStorage fileArchiveStorage
 @inject IFileArchiveFileInfoCRUD fileArchiveFileInfoCRUD
 
-<PageTitle>Demo 5: Add one file and max 3 files in archive</PageTitle>
+<PageTitle>Demo 4: Only display add section with description field</PageTitle>
 
-<h1>Demo 5: Add one file and max 3 files in archive</h1>
+<h1>Demo 4: Only display add section with description field</h1>
 
-<p>This demo shows:</p>
+<p>This demo only shows:</p>
 <ul>
-    <li>The user can add <u>one file</u></li>
-    <li>The user can delete files</li>
-    <li>The description of each file is displayed and the user can edit/enter it</li>
+    <li>Existing files are not displayed</li>
+    <li>The user can add multple files</li>
+    <li>The description of each new file is displayed and the user can edit/enter it</li>
     <li>Each file must be less than or equal to 20000 bytes in size</li>
-    <li>There can be only 3 files in the archive</li>
+    <li>There is no limit to the maximum number of files</li>
     <li>Filetypes allowed are PNG, JPG and JPEG</li>
-    <li>The user can download the files one at the time</li>
 </ul>
 <br />
-
 
 @if (!string.IsNullOrEmpty(Message))
 {
@@ -55,20 +53,17 @@
     <div class="form-group row">
         <label for="demouimodel-files" class="col-sm-2 col-form-label">Files:</label>
         <div class="col-sm-10">
-            <FileArchiveList @ref="FileArchiveComponent" Files="DemoUIModel.Files"
+            <FileArchiveCards @ref="FileArchiveComponent" Files="DemoUIModel.Files"
                         FileTypesAccepted=".png,.jpg,.jpeg"
-                        AllowSelectMultipleFiles="false"
+                        AllowSelectMultipleFiles="true"
                         AllowAdd="true"
-                        AllowUpdate="true"
+                        AllowUpdate="false"
                         AllowUpdateOnNew="true"
                         AllowDownload="true"
-                        AllowDelete="true"
-                        DisplayDescription="true"
-                        DisplayExistingFiles="true"
+                        DisplayExistingFiles="false"
                         MaxFileSize="20000"
-                        AllowedNbrOfFiles="3"
                         Height="300px">
-            </FileArchiveList>
+            </FileArchiveCards> 
             <ValidationMessage For="@(() => DemoUIModel.Files)" />
         </div>
     </div>
@@ -80,11 +75,11 @@
 </EditForm>
 
 @code {
-    private FileArchiveList? FileArchiveComponent;
+    private FileArchiveCards? FileArchiveComponent;
     private string Message = string.Empty;
     private class DemoFieldsForUI
     {
-        public string? Description { get; set; } = "Demo 5";
+        public string? Description { get; set; } = "Demo 4 Cards";
         public DateTime Date { get; set; } = DateTime.Now.Date;
 
         public List<FileArchiveFileInfoUI> Files { get; set; }

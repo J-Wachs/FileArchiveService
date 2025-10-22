@@ -1,0 +1,76 @@
+﻿/* File: Shared/FileCard.razor.css */
+* {
+    box-sizing: border-box;
+}
+
+.file-card {
+    width: 300px;
+    border: 3px solid lightgrey;
+    padding: 2px;
+    border-radius: 0.5rem;
+    background-color: #ffffff;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.filename {
+    font-weight: 600;
+    flex-grow: 1;
+    flex-shrink: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.actions {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+}
+
+.card-body {
+    padding: 1rem;
+    flex-grow: 1;
+    overflow: hidden; /* Fix for wide input fields breaking layout */
+}
+
+    .card-body .form-control {
+        width: 100%;
+    }
+
+.card-footer {
+    padding: 0.75rem 1rem;
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+}
+
+.hover-item {
+    text-decoration: none;
+    cursor: pointer;
+    color: #0d6efd;
+}
+
+    .hover-item:hover {
+        text-decoration: underline;
+    }
+
+.description-text {
+    background-color: #f8f9fa;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    min-height: 31px;
+    font-size: 0.875em;
+    color: #6c757d;
+}

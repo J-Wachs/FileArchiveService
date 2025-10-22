@@ -3,12 +3,12 @@
 namespace FileArchive.Utils.Interfaces;
 
 /// <summary>
-/// Interface for helpers to manage Java Web Token.
+/// Interface for helpers to manage Json Web Token.
 /// </summary>
 public interface IJWTokenHelper
 {
     /// <summary>
-    /// Generate a Java Web Token.
+    /// Generate a Json Web Token.
     /// </summary>
     /// <param name="userId">Id of the user</param>
     /// <param name="claims">Claims to include in the token</param>
@@ -19,7 +19,7 @@ public interface IJWTokenHelper
     /// <summary>
     /// Validate the token and it's content.
     /// </summary>
-    /// <param name="jwToken">The Java Web Token to validate</param>
+    /// <param name="jwToken">The Json Web Token to validate</param>
     /// <returns>The claims in the token</returns>
     Result<ClaimsPrincipal> ValidateToken(string jwToken);
 }

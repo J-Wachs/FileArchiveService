@@ -8,7 +8,7 @@ namespace FileArchive.Utils.Interfaces;
 public interface IFileArchiveJWTokenHelperRead
 {
     /// <summary>
-    /// Retrieves the user id and file id from the Java Wewb Token.
+    /// Retrieves the user id and file id from the Json Wewb Token.
     /// </summary>
     /// <param name="jwToken">Token containing the information</param>
     /// <returns></returns>

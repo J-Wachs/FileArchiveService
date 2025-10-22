@@ -21,7 +21,7 @@
     <li>The user cannot delete files</li>
     <li>The description of each file is displayed and the user cannot edit</li>
     <li>The user can download the files one at the time</li>
-    <li>The two field Description and Date are not affected</li>
+    <li>The two fields 'Report description' and 'Date' are not affected</li>
 </ul>
 <br />
 
@@ -47,7 +47,10 @@
         </div>
     </div>
     <div class="form-group row">
-        <label class="col-sm-2 col-form-label">Files:</label>
+        <br />
+    </div>
+    <div class="form-group row">
+        <label for="demouimodel-files" class="col-sm-2 col-form-label">Files:</label>
         <div class="col-sm-10">
             <FileArchiveList @ref="FileArchiveComponent" Files="DemoUIModel.Files"
                         AllowAdd="false"
@@ -58,6 +61,7 @@
                         DisplayExistingFiles="true"
                         Height="300px">
             </FileArchiveList>
+            <ValidationMessage For="@(() => DemoUIModel.Files)" />
         </div>
     </div>
     <div class="form-group row">
@@ -79,7 +83,7 @@
 
         public DemoFieldsForUI()
         {
-            Files = new List<FileArchiveFileInfoUI>();
+            Files = [];
         }
     }
 

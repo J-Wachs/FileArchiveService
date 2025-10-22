@@ -1,26 +1,48 @@
 # File Archive service
 
-The File Archive service handles everything needed to store and retrieve files from an archive. It consist of a Blazor
-component for displaying and maintaining the content of the file archive. Further, it contains classes to support the
-Blazor visual component and maintaining the file archive programatically.
+The File Archive service handles everything needed to store and retrieve files from an archive. It consist of 
+two Blazor components for displaying and maintaining the content of the file archive. Further,
+it contains classes to support the Blazor visual components and maintaining the file archive programatically.
 
-In the File Archive, files are grouped by a 'parent key'. What that key is, is up to you. It could be a incident report Id,
-an order number or something completly different.
+In the File Archive, files are grouped by a 'parent key'. What that key is, is up to you. It could be a incident
+report Id, an order number or something completly different.
 
-The visual component can be configured to match the needs in the specific case.
+The visual components can be configured to match the needs in the specific case.
 
 The service has been developed in .NET 9.
 
+## What's new
+Version 2.0:
+* Changed license to Unlicense
+* Component that displays the files in a card layout has been added
+* Added option for delay of files in order for antivirus scanning (AV installed on the server, not a part of this
+ service) to take place before the files are available for download. UI component and download controller changed
+ accordingly. See appsettings.json for configuration
+* Return type of controller changed to IResult and code changes because of that
+* Result class updated to allow for more detailed reason for errors and allowing APIs to return HTTP status codes easily
+* FileArchiveList (and the new FileArchiveCards) component now returns error messages to the EditForm validation
+ detail and summary
+* FileArchiveList (and the new FileArchiveCards) component can be used outside an EditForm. Error messages are then
+ displayed in a dialog box
+* Logger has been added to various classes
+* Spelling mistakes corrected
+* Upgraded NuPkgs to latest version
+* Bug corrected: When adding files several times, previously added files (before clicking Submit) where removed
+
+Version 1.0:
+* Initial version
+
 ## Fully functional example project
 
-This repo contains a project that is the actual components, it's support classes and a demo project, where you can see
-examples of various configurations of the component:
+This repo contains a project that is the actual components, their support classes and a demo project, where you can
+see examples of various configurations of the component:
 
 * Allow users to add files to a the File Archive
 * Allow users to see files already in the File Archive
 * Allow users to enter/maintain a description of the files in the File Archive
 * Allow users to delete files in the File Archive
 * Only display files and allow download
+* Use FileArchive* components outside an EditForm
 
 The File Archive consist of two parts:
 * Information about the files in the File Archive
@@ -35,7 +57,7 @@ a folder on the harddrive or in Azure Blob Storage (or Azurite Blob Storage).
 There are four parts that make the File Archive service:
 
 * Method to read information about the files already in the File Archive
-* Component to maintain the File Archive
+* Components to maintain the File Archive
 * Method to store changes made to information about files and store the files themselfs
 * Web API to download files
 
@@ -55,7 +77,7 @@ information on a SQL server.
 
 ### Setting up your own project to use the File Archive service
 To use the File Archive service in your own projects, you must add the service project to your solution. Then you must
-decide how files are to be stored. There are to classes for that. One that will store files in a folder on the harddrive,
+decide how files are to be stored. There are two classes for that. One that will store files in a folder on the harddrive,
 and one that will store the files in Azure Blob storage. Then you need to add a number of services to the Program.cs in
 your main project. Example from demo project:
 
@@ -70,10 +92,10 @@ builder.Services.AddScoped<IJWTokenHelper, JWTokenHelper>();
 builder.Services.AddScoped<IFileArchiveJWTokenHelper, FileArchiveJWTokenHelper>();
 ```
 
-The two services at bottom, are for the Java Web Token security that is used when downloading files.
+The two services at bottom, are for the Json Web Token security that is used when downloading files.
 
 ### Adding and using the File Archive component in your own projects
-Add the File Archive component to the relevant pages in your project. If the page is an Update page, you
+Add the one of the File Archive components you want to the relevant pages in your project. If the page is an Update page, you
 must add code to retrieve information about the files in the archive (see demos). This list is passed to the File Archive
 component, in order for the user to maintain the File Archive.
 
@@ -84,13 +106,15 @@ demos and copy the necessary code over.
 As files are to be stored under a 'parent key', your OnValidSubmit method must establish the parent key in create
 situations.
 
-Please note that depending on the config of the File Archive component, the user can download the files in the archive.
+Please note that depending on the config of the File Archive components, the user can download the files in the archive.
 
 ## Modifying the File Archive service for your own use
 
 Allowing users to upload files opens a risk of virus infected files entering your system. You should definitely consider
 extending the upload part, have it call a virus scanner. Which method that is the right one for you, is something that
-you must figure out.
+you must figure out. In version 2, a delay option has been added, in order for the virus scanner on the server to do
+it's work. While the delay is on, the files are not available for download. The text 'To be released'. When the timeout 
+occurrs, the files are made available for download.
 
 There are services that expose a virus scanner API that you can call. When using the option to store files on a folder,
 make sure that the virus scanner on the server scans the folder in question.
@@ -98,7 +122,7 @@ make sure that the virus scanner on the server scans the folder in question.
 Your organisation can have other requirements that are not covered by my project. Please feel free to adapt a local 
 version to fit your needs.
 
-Remember to change the passphrase for the signing of the Java Web Token.
+Remember to change the passphrase for the signing of the Json Web Token.
 
 ## Found a bug?
 
@@ -107,9 +131,10 @@ Please create an issue in the repo.
 ## Known issues (Work in progress)
 
 ### No virus scanner integration
-File Archive does not have any virus scanner integration build in. Do not expect for one to come.
+File Archive does not have any virus scanner integration build in. Do not expect for one to come. However, you can set
+a delay in making files available for download, in order for your virus scanner to do it's work. See appsettings.json.
 
-### Authorized users and Java Web Token for download API
+### Authorized users and Json Web Token for download API
 The JWT made for the download to protect the API, simply receives the user identification, it is not validated. If you 
 will be using the File Archive service, consider to extend the API to validate against your actual identify provider.
 
@@ -118,7 +143,7 @@ collects the user id.
 
 ### Connection string to Azure blob storage
 Both the File Archive component and the API class get the connection string from the settings file. The setting required
-needs the complete connection string. It should be redesigned to use azure valut and store the id info there.
+needs the complete connection string. It should be redesigned to use Azure valut and store the id info there.
 
 ## FAQ
 

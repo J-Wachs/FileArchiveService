@@ -2,7 +2,6 @@
 using FileArchive.Interfaces;
 using FileArchive.Utils;
 using Microsoft.AspNetCore.Components.Forms;
-using Microsoft.Extensions.Configuration;
 
 namespace FileArchive.Services;
 
@@ -11,26 +10,38 @@ namespace FileArchive.Services;
 /// 
 /// You must update the connection string in the appsetting.json file.
 /// </summary>
-public class FileArchiveFolderAzureBlob : IFileArchiveStorage
+public class FileArchiveFolderAzureBlob(
+    ILogger<FileArchiveFolderAzureBlob> logger,
+    IConfiguration config,
+    IFileArchiveFileInfoCRUD fileInfoCRUD
+    ) : IFileArchiveStorage
 {
-    private readonly string _blobConnectionString;
-    private readonly string _blobStorageFolder;
-    private long _maxFileSize;
-
-    public FileArchiveFolderAzureBlob(IConfiguration config)
-    {
-        _maxFileSize = ConfigHelper.GetMustExistConfigValue<long>(config, FileArchiveConstants.ConfigMaxFileSize);
-        _blobConnectionString = ConfigHelper.GetMustExistConfigValue<string>(config, FileArchiveConstants.AzureBlobConnectionString);
-        // Azure Blob storage folders must have names in lower case.
-        _blobStorageFolder = ConfigHelper.GetMustExistConfigValue<string>(config, FileArchiveConstants.BlobStorageFolder).ToLowerInvariant();
-    }
+    private readonly string _blobConnectionString = ConfigHelper.GetMustExistConfigValue<string>(config, FileArchiveConstants.AzureBlobConnectionString);
+    private readonly string _blobStorageFolder = ConfigHelper.GetMustExistConfigValue<string>(config, FileArchiveConstants.BlobStorageFolder).ToLowerInvariant();
+    private readonly int _secondsBeforeReleaseFile = config.GetValue<int>(FileArchiveConstants.ConfigSecondsBeforeReleaseOfFile, 0);
+    private readonly IFileArchiveFileInfoCRUD _fileInfoCRUD = fileInfoCRUD;
+    private long _maxFileSize = ConfigHelper.GetMustExistConfigValue<long>(config, FileArchiveConstants.ConfigMaxFileSize);
 
     public async ValueTask<Result<Stream?>> OpenStoredFile(long id)
     {
-        string methodName = $"{nameof(OpenStoredFile)}", paramList = $"({id})";
+        string methodName = nameof(OpenStoredFile), paramList = $"({id})";
 
         try
         {
+            var getFileInfoByIdResult = await _fileInfoCRUD.GetFileInfoById(id);
+            if (getFileInfoByIdResult.IsSuccess is false)
+            {
+                return Result<Stream?>.CopyResult(getFileInfoByIdResult);
+            }
+
+            var fileInfo = getFileInfoByIdResult.Data!;
+            var fileReleaseDateTime = DateTime.Now.AddSeconds(-_secondsBeforeReleaseFile);
+
+            if (fileInfo.Created > fileReleaseDateTime)
+            {
+                return Result<Stream?>.FailureForbidden($"The file with Id {id}, has not yet been released. It will be released at {fileReleaseDateTime}.");
+            }
+
             var blobContainerClient = new BlobContainerClient(_blobConnectionString, _blobStorageFolder);
 
             var blob = blobContainerClient.GetBlobClient(id.ToString());
@@ -41,13 +52,14 @@ public class FileArchiveFolderAzureBlob : IFileArchiveStorage
         }
         catch (Exception ex)
         {
-            return Result<Stream?>.Failure($"Error occurred in '{methodName}{paramList}', The error is: '{ex}'.");
+            logger.LogCritical("Error occurred in '{methodName}{paramList}'. The error is: 'Exception occurred '{ex}''.", methodName, paramList, ex);
+            return Result<Stream?>.Fatal("An error occurred");
         }
     }
 
     public Result CloseStoredFile(Stream stream)
     {
-        string methodName = $"{nameof(CloseStoredFile)}", paramList = "(stream)";
+        string methodName = nameof(CloseStoredFile), paramList = $"(stream)";
 
         try
         {
@@ -56,13 +68,14 @@ public class FileArchiveFolderAzureBlob : IFileArchiveStorage
         }
         catch (Exception ex)
         {
-            return Result.Failure($"Error occurred in '{methodName}{paramList}', The error is: '{ex}'.");
+            logger.LogCritical("Error occurred in '{methodName}{paramList}'. The error is: 'Exception occurred '{ex}''.", methodName, paramList, ex);
+            return Result.Fatal($"Error occurred in '{methodName}', The error is: '{ex}'.");
         }
     }
 
     public async ValueTask<Result> StoreFile(long id, IBrowserFile file)
     {
-        string methodName = $"", paramList = $"({id}, file)";
+        string methodName = nameof(StoreFile), paramList = $"({id}, file)";
 
         try
         {
@@ -78,15 +91,16 @@ public class FileArchiveFolderAzureBlob : IFileArchiveStorage
 
             return Result.Success();
         }
-        catch (Exception ex )
+        catch (Exception ex)
         {
-            return Result.Failure($"Error occurred in '{methodName}{paramList}', The error is: '{ex}'.");
+            logger.LogCritical("Error occurred in '{methodName}{paramList}'. The error is: 'Exception occurred '{ex}''.", methodName, paramList, ex);
+            return Result.Fatal("An error occurred");
         }
     }
 
     public async ValueTask<Result> DeleteStoredFile(long id)
     {
-        string methodName = $"{nameof(DeleteStoredFile)}", paramList = $"({id})";
+        string methodName = nameof(DeleteStoredFile), paramList = $"({id})";
 
         try
         {
@@ -99,7 +113,8 @@ public class FileArchiveFolderAzureBlob : IFileArchiveStorage
         }
         catch (Exception ex)
         {
-            return Result.Failure($"Error occurred in '{methodName}{paramList}', The error is: '{ex}'.");
+            logger.LogCritical("Error occurred in '{methodName}{paramList}'. The error is: 'Exception occurred '{ex}''.", methodName, paramList, ex);
+            return Result.Fatal("An error occurred");
         }
     }
 

@@ -1,5 +1,4 @@
 ﻿using FileArchive.Utils.Interfaces;
-using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -11,7 +10,10 @@ namespace FileArchive.Utils;
 /// Class that provides methods to build and validate Java Web Tokens.
 /// </summary>
 /// <param name="config"></param>
-public class JWTokenHelper(IConfiguration config) : IJWTokenHelper
+public class JWTokenHelper(
+    ILogger<JWTokenHelper> logger,
+    IConfiguration config
+    ) : IJWTokenHelper
 {
     private const string JWTIssuer = "Jwt:Issuer";
     private const string JWTAudience = "Jwt:Audience";
@@ -26,23 +28,23 @@ public class JWTokenHelper(IConfiguration config) : IJWTokenHelper
     {
         if (String.IsNullOrWhiteSpace(jwToken))
         {
-            return Result<ClaimsPrincipal>.Failure($"{nameof(ValidateToken)}: jwToken is missing");
+            return Result<ClaimsPrincipal>.FailureBadRequest($"{nameof(ValidateToken)}: jwToken is missing");
         }
 
         var resultPrincipal = GetPrincipal(jwToken);
         if (resultPrincipal.IsSuccess is false)
         {
-            return Result<ClaimsPrincipal>.Failure(resultPrincipal.Messages);
+            return Result<ClaimsPrincipal>.CopyResult(resultPrincipal);
         }
 
         if (resultPrincipal.Data is null || resultPrincipal.Data.Claims.Any() is false)
         {
-            return Result<ClaimsPrincipal>.Failure($"{nameof(ValidateToken)}: There is no Claims in the token");
+            return Result<ClaimsPrincipal>.FailureBadRequest($"{nameof(ValidateToken)}: There is no Claims in the token");
         }
 
         if (resultPrincipal.Data.Identity?.IsAuthenticated is false)
         {
-            return Result<ClaimsPrincipal>.Failure($"{nameof(ValidateToken)}: The user is not identified in the calling client.");
+            return Result<ClaimsPrincipal>.FailureUnauthorized($"{nameof(ValidateToken)}: The user is not identified in the calling client.");
         }
 
         return Result<ClaimsPrincipal>.Success(resultPrincipal.Data);
@@ -52,7 +54,7 @@ public class JWTokenHelper(IConfiguration config) : IJWTokenHelper
     {
         if (String.IsNullOrWhiteSpace(userId))
         {
-            return Result<string>.Failure($"{nameof(GenerateToken)}: User Id must be supplied");
+            return Result<string>.FailureUnauthorized($"{nameof(GenerateToken)}: User Id must be supplied");
         }
 
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secret));
@@ -91,6 +93,7 @@ public class JWTokenHelper(IConfiguration config) : IJWTokenHelper
     /// <returns>Claims in token</returns>
     private Result<ClaimsPrincipal> GetPrincipal(string token)
     {
+        string methodName = nameof(GetPrincipal), paramList = $"('{token}')";
         try
         {
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secret));
@@ -126,11 +129,13 @@ public class JWTokenHelper(IConfiguration config) : IJWTokenHelper
         }
         catch (SecurityTokenInvalidSignatureException ex)
         {
-            return Result<ClaimsPrincipal>.Failure($"{nameof(GetPrincipal)}: Signature does not match: '{ex}'");
+            logger.LogCritical("Error occurred in '{methodName}{paramList}'. The error is: 'SecurityTokenInvalidSignatureException exception '{ex}''.", methodName, paramList, ex);
+            return Result<ClaimsPrincipal>.Fatal($"{nameof(GetPrincipal)}: Signature does not match.");
         }
         catch (Exception ex)
         {
-            return Result<ClaimsPrincipal>.Failure($"{nameof(GetPrincipal)}: An exception has occurred: '{ex}'");
+            logger.LogCritical("Error occurred in '{methodName}{paramList}'. The error is: 'Exception occurred '{ex}''.", methodName, paramList, ex);
+            return Result<ClaimsPrincipal>.Fatal($"{nameof(GetPrincipal)}: An exception occurred.");
         }
     }
 }

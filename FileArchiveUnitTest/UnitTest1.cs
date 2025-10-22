@@ -9,7 +9,7 @@ using YourNamespace.TestUtils;
 
 namespace FileArchiveUnitTest;
 
-public class Tests: IDisposable
+public class Tests : IDisposable
 {
     private readonly string _jsonTempDir = string.Empty;
     private readonly IConfiguration _config;
@@ -51,7 +51,9 @@ public class Tests: IDisposable
     [Test]
     public async Task CRUDJSON_CreateFileArchiveInfo()
     {
-        var service = new FileArchiveFileInfoCRUDJSON(_config);
+        var mockLogger = new Mock<Microsoft.Extensions.Logging.ILogger<FileArchiveFileInfoCRUDJSON>>();
+
+        var service = new FileArchiveFileInfoCRUDJSON(mockLogger.Object, _config);
 
         FileArchiveInfo fileInfo = new()
         {
@@ -78,7 +80,9 @@ public class Tests: IDisposable
     [Test]
     public async Task CRUDJSON_UpdateFileArchiveInfo()
     {
-        var service = new FileArchiveFileInfoCRUDJSON(_config);
+        var mockLogger = new Mock<Microsoft.Extensions.Logging.ILogger<FileArchiveFileInfoCRUDJSON>>();
+
+        var service = new FileArchiveFileInfoCRUDJSON(mockLogger.Object, _config);
 
         FileArchiveInfo fileInfo = new()
         {
@@ -120,7 +124,9 @@ public class Tests: IDisposable
     [Test]
     public async Task CRUDJSON_DeleteFileArchiveInfo()
     {
-        var service = new FileArchiveFileInfoCRUDJSON(_config);
+        var mockLogger = new Mock<Microsoft.Extensions.Logging.ILogger<FileArchiveFileInfoCRUDJSON>>();
+
+        var service = new FileArchiveFileInfoCRUDJSON(mockLogger.Object, _config);
 
         FileArchiveInfo fileInfo = new()
         {
@@ -168,7 +174,9 @@ public class Tests: IDisposable
     [Test]
     public async Task CRUDJSON_GetForId()
     {
-        var service = new FileArchiveFileInfoCRUDJSON(_config);
+        var mockLogger = new Mock<Microsoft.Extensions.Logging.ILogger<FileArchiveFileInfoCRUDJSON>>();
+
+        var service = new FileArchiveFileInfoCRUDJSON(mockLogger.Object, _config);
 
         FileArchiveInfo fileInfo = new()
         {
@@ -214,7 +222,9 @@ public class Tests: IDisposable
     [Test]
     public async Task CRUDJSON_GetForParetKey()
     {
-        var service = new FileArchiveFileInfoCRUDJSON(_config);
+        var mockLogger = new Mock<Microsoft.Extensions.Logging.ILogger<FileArchiveFileInfoCRUDJSON>>();
+
+        var service = new FileArchiveFileInfoCRUDJSON(mockLogger.Object, _config);
 
         FileArchiveInfo fileInfo = new()
         {
@@ -245,7 +255,7 @@ public class Tests: IDisposable
             ParentKey = "4720"
         };
 
-        _  = await service.CreateFileInfo(fileInfo, userId);
+        _ = await service.CreateFileInfo(fileInfo, userId);
 
         // Results
         string parentKey = "4712";
@@ -270,7 +280,9 @@ public class Tests: IDisposable
         var mockContext = new Mock<IFileArchiveContext>();
         mockContext.Setup(x => x.FileArchiveInfos).Returns(mockSet.Object);
 
-        var service = new FileArchiveFileInfoCRUDDB(mockContext.Object);
+        var mockLogger = new Mock<Microsoft.Extensions.Logging.ILogger<FileArchiveFileInfoCRUDDB>>();
+
+        var service = new FileArchiveFileInfoCRUDDB(mockLogger.Object, mockContext.Object);
 
         FileArchiveInfo fileInfo = new()
         {
@@ -291,19 +303,35 @@ public class Tests: IDisposable
     [Test]
     public async Task CRUDDB_UpdateFileArchiveInfo()
     {
-        var mockSet = new Mock<DbSet<FileArchiveInfo>>();
+        //var mockSet = new Mock<DbSet<FileArchiveInfo>>();
+        List<FileArchiveInfo> data =
+        [
+            new()
+            {
+                Id = 47,
+                Filename = "MyFile.jpg",
+                FileMimeType = "image/jpeg",
+                Description = "This is a test picture",
+                ParentKey = "4711"
+            }
+        ];
+
+        var mockSet = MockDbSetHelper.CreateMockDbSet(data);
 
         var mockContext = new Mock<IFileArchiveContext>();
+
         mockContext.Setup(x => x.FileArchiveInfos).Returns(mockSet.Object);
 
-        var service = new FileArchiveFileInfoCRUDDB(mockContext.Object);
+        var mockLogger = new Mock<Microsoft.Extensions.Logging.ILogger<FileArchiveFileInfoCRUDDB>>();
+
+        var service = new FileArchiveFileInfoCRUDDB(mockLogger.Object, mockContext.Object);
 
         FileArchiveInfo fileInfo = new()
         {
             Id = 47,
             Filename = "MyFile.jpg",
             FileMimeType = "image/jpeg",
-            Description = "This is a test picture",
+            Description = "This is the updated picture",
             ParentKey = "4711"
         };
 
@@ -338,7 +366,10 @@ public class Tests: IDisposable
         var mockSet = MockDbSetHelper.CreateMockDbSet(data);
         mockContext.Setup(c => c.FileArchiveInfos).Returns(mockSet.Object);
 
-        var service = new FileArchiveFileInfoCRUDDB(mockContext.Object);
+        var mockLogger = new Mock<Microsoft.Extensions.Logging.ILogger<FileArchiveFileInfoCRUDDB>>();
+
+        var service = new FileArchiveFileInfoCRUDDB(mockLogger.Object, mockContext.Object);
+
         long idToDelete = 20L;
         var result = await service.DeleteFileInfo(idToDelete);
 
@@ -377,7 +408,9 @@ public class Tests: IDisposable
         var mockSet = MockDbSetHelper.CreateMockDbSet(data);
         mockContext.Setup(c => c.FileArchiveInfos).Returns(mockSet.Object);
 
-        var service = new FileArchiveFileInfoCRUDDB(mockContext.Object);
+        var mockLogger = new Mock<Microsoft.Extensions.Logging.ILogger<FileArchiveFileInfoCRUDDB>>();
+
+        var service = new FileArchiveFileInfoCRUDDB(mockLogger.Object, mockContext.Object);
 
         long idToRetrieve = 20L;
 
@@ -419,7 +452,9 @@ public class Tests: IDisposable
         var mockSet = MockDbSetHelper.CreateMockDbSet(data);
         mockContext.Setup(c => c.FileArchiveInfos).Returns(mockSet.Object);
 
-        var service = new FileArchiveFileInfoCRUDDB(mockContext.Object);
+        var mockLogger = new Mock<Microsoft.Extensions.Logging.ILogger<FileArchiveFileInfoCRUDDB>>();
+
+        var service = new FileArchiveFileInfoCRUDDB(mockLogger.Object, mockContext.Object);
 
         string parentKey = "4712";
         var listOfFileInfos = await service.GetListOfFileInfoByParentKey(parentKey);

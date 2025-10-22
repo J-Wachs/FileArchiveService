@@ -12,12 +12,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Azure.Core" Version="1.45.0" />
-    <PackageReference Include="Azure.Identity" Version="1.13.2" />
-    <PackageReference Include="Azure.Storage.Blobs" Version="12.24.0" />
-    <PackageReference Include="Azure.Storage.Files.Shares" Version="12.22.0" />
-    <PackageReference Include="Microsoft.Extensions.Azure" Version="1.11.0" />
-    <PackageReference Include="System.Threading.Channels" Version="9.0.4" />
+    <PackageReference Include="Azure.Core" Version="1.49.0" />
+    <PackageReference Include="Azure.Identity" Version="1.17.0" />
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.26.0" />
+    <PackageReference Include="Azure.Storage.Files.Shares" Version="12.24.0" />
+    <PackageReference Include="Microsoft.Extensions.Azure" Version="1.13.0" />
+    <PackageReference Include="System.Threading.Channels" Version="9.0.10" />
   </ItemGroup>
 
 </Project>

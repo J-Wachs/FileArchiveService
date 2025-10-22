@@ -6,4 +6,5 @@ public class FileArchiveConstants
     public const string BlobStorageFolder = "Azure:BlobStorageFolder";
     public const string ConfigMaxFileSize = "FileArchive:MaxFileSize";
     public const string ConfigPath = "FileArchive:Path";
+    public const string ConfigSecondsBeforeReleaseOfFile = "FileArchive:SecondsBeforeReleaseOfFile";
 }

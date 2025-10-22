@@ -1,0 +1,31 @@
+﻿/* File: FileArchiveCards.razor.css */
+.archive-shell {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    background-color: #f0f2f5;
+    padding: 1rem;
+}
+
+.card-scroller {
+    flex-grow: 1;
+    overflow-y: auto;
+    position: relative;
+}
+
+.card-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.card-wrapper {
+    display: flex;
+    flex: 1 1 300px;
+}
+
+.add-files-section {
+    padding-top: 1rem;
+    flex-shrink: 0;
+}
