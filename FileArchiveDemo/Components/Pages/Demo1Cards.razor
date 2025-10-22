@@ -1,4 +1,4 @@
-﻿@page "/demo2"
+﻿@page "/demo1cards"
 @rendermode InteractiveServer
 @using System.ComponentModel.DataAnnotations
 @using FileArchive
@@ -11,15 +11,15 @@
 @inject IFileArchiveStorage fileArchiveStorage
 @inject IFileArchiveFileInfoCRUD fileArchiveFileInfoCRUD
 
-<PageTitle>Demo 2: List with add</PageTitle>
+<PageTitle>Demo 1: List with add</PageTitle>
 
-<h1>Demo 2: List with add option</h1>
+<h1>Demo 1: List with add option</h1>
 
 <p>This demo shows:</p>
 <ul>
     <li>The user can add multple files</li>
     <li>The user can delete files</li>
-    <li>The description of each file is not displayed and the user cannot enter it when adding files</li>
+    <li>The description of each file is displayed and the user can edit/enter it</li>
     <li>Each file must be less than or equal to 20000 bytes in size</li>
     <li>There is no limit to the maximum number of files</li>
     <li>Filetypes allowed are PNG, JPG and JPEG</li>
@@ -31,7 +31,6 @@
 {
     <span style="color: red; font-weight: bold;">@Message</span>
 }
-
 
 <EditForm Model="DemoUIModel" OnValidSubmit="SubmitForm" class="form-control">
     <DataAnnotationsValidator />
@@ -50,25 +49,25 @@
         </div>
     </div>
     <div class="form-group row">
-        <br />
+        <br/>
     </div>
     <div class="form-group row">
         <label for="demouimodel-files" class="col-sm-2 col-form-label">Files:</label>
         <div class="col-sm-10">
-            <FileArchiveList @ref="FileArchiveComponent" Files="DemoUIModel.Files"
-            FileTypesAccepted=".png,.jpg,.jpeg"
-            AllowSelectMultipleFiles="true"
-            AllowAdd="true"
-            AllowUpdate="false"
-            AllowUpdateOnNew="false"
-            AllowDelete="true"
-            DisplayDescription="false"
-            DisplayExistingFiles="true"
-            AllowDownload="true"
-            MaxFileSize="20000"
-            Height="300px">
-            </FileArchiveList>
-            <ValidationMessage For="@(() => DemoUIModel.Files)" />
+            <FileArchiveCards @ref="FileArchiveComponent" Files="DemoUIModel.Files"
+                             FileTypesAccepted=".png,.jpg,.jpeg"
+                             AllowSelectMultipleFiles="true"
+                             AllowAdd="true"
+                             AllowUpdate="true"
+                             AllowUpdateOnNew="true"
+                             AllowDownload="true"
+                             AllowDelete="true"
+                             DisplayDescription="true"
+                             DisplayExistingFiles="true"
+                             MaxFileSize="20000"
+                             Height="300px">
+            </FileArchiveCards>
+            <ValidationMessage For="@(() => DemoUIModel.Files)"/>
         </div>
     </div>
     <div class="form-group row">
@@ -79,12 +78,12 @@
 </EditForm>
 
 @code {
-    private FileArchiveList? FileArchiveComponent;
-    private string Message = string.Empty;
+    private FileArchiveCards? FileArchiveComponent;
 
+    private string Message = string.Empty;
     private class DemoFieldsForUI
     {
-        public string? Description { get; set; } = "Demo 2";
+        public string? Description { get; set; } = "Demo 1 Cards";
         public DateTime Date { get; set; } = DateTime.Now.Date;
 
         public List<FileArchiveFileInfoUI> Files { get; set; }
@@ -104,13 +103,14 @@
     // the Id is returned by e.g.
     // the SQL server.
 
-    private string userId = "8888-99999";
+    private string userId = "8888-9999";
 
     protected override void OnInitialized()
     {
         fileArchiveCRUD = new FileArchiveCRUD(fileArchiveFileInfoCRUD,
                                               fileArchiveStorage);
     }
+
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -145,7 +145,7 @@
         // parent key for the storage of information for the files.
 
         // Save Incident report data
-        // 
+        //
 
         // Obtain key
         // reportId = ....

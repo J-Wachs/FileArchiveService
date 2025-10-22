@@ -1,0 +1,47 @@
+﻿@using Microsoft.AspNetCore.Components.Forms
+@using FileArchive.Shared
+
+<div class="archive-shell" style="height: @Height;">
+    <div class="card-scroller">
+        <div class="card-grid">
+
+            @if (FilesToDisplay.Any())
+            {
+                @foreach (var file in FilesToDisplay)
+                {
+                    <div class="card-wrapper">
+                        <FileCard File="file"
+                                  EarliestReleaseOfFile="_earlistReleaseOfFile"
+                                  AllowDownload="AllowDownload"
+                                  DisplayDescription="_displayDescription"
+                                  CanUpdateDescription="@((AllowUpdate && !file.Insert) || (AllowUpdateOnNew && file.Insert))"
+                                  AllowDelete="AllowDelete"
+                                  AllowAdd="AllowAdd"
+                                  OnDownload="DownloadFile"
+                                  OnRemove="RemoveNewFile"
+                                  OnDescriptionChanged="(string newDesc) => DescriptionChanged(newDesc, file)" />
+                    </div>
+                }
+            }
+            else
+            {
+                <p class="p-3">There are no files to display.</p>
+            }
+            
+        </div>
+    </div>
+
+    @if (AllowAdd)
+    {
+        <div class="add-files-section">
+            @if (AllowSelectMultipleFiles)
+            {
+                <InputFile OnChange="GetFilesToUpload" multiple class="btn" accept="@FileTypesAccepted" />
+            }
+            else
+            {
+                <InputFile OnChange="GetFilesToUpload" class="btn" accept="@FileTypesAccepted" />
+            }
+        </div>
+    }
+</div>

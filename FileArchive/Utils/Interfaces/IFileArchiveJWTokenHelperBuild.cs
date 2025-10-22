@@ -6,7 +6,7 @@
 public interface IFileArchiveJWTokenHelperBuild
 {
     /// <summary>
-    /// Creates a Java Web Token to use for the Download API.
+    /// Creates a Json Web Token to use for the Download API.
     /// </summary>
     /// <param name="userId">Id of the user that wants to downlaod</param>
     /// <param name="fileId">Id of the file to download</param>

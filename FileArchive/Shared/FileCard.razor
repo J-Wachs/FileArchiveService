@@ -1,0 +1,73 @@
+﻿@using Microsoft.AspNetCore.Components.Forms
+@using FileArchive.Models
+
+<div class="file-card">
+    <div class="card-header">
+        <div class="filename">
+            @if (AllowDownload && (File.Created is not null && File.Created <= EarliestReleaseOfFile))
+            {
+                <span class="hover-item" @onclick="() => OnDownload.InvokeAsync(File)">
+                    @File.Filename
+                </span>
+            }
+            else
+            {
+                @File.Filename
+            }
+        </div>
+    </div>
+
+    @if (DisplayDescription)
+    {
+        <div class="card-body">
+            <label>Description</label>
+            @if (CanUpdateDescription)
+            {
+                <InputText class="form-control form-control-sm"
+                           Value="@File.Description"
+                           ValueExpression="() => File.Description"
+                           ValueChanged="OnDescriptionChanged" />
+            }
+            else
+            {
+                <p class="description-text">@(File.Description ?? "No description")</p>
+            }
+        </div>
+    }
+
+    <div class="card-footer">
+        <div class="actions">
+            <small class="text-muted">
+                @if (File.Insert && AllowAdd)
+                {
+                    <button type="button" @onclick="() => OnRemove.InvokeAsync(File)" class="btn btn-sm btn-outline-secondary">Remove</button>
+                }
+                else if (AllowDelete)
+                {
+                    <InputCheckbox @bind-Value="@File.Delete" /> <text>Mark for delete  </text>
+                }
+                <strong>State: </strong>
+                @if (File.Insert)
+                {
+                    <text>To be added</text>
+                }
+                else if (File.Delete)
+                {
+                    <text>To be deleted</text>
+                }
+                else if (File.Update)
+                {
+                    <text>To be updated</text>
+                }
+                else if (File.Created is not null && File.Created <= EarliestReleaseOfFile)
+                {
+                    <text>Archived</text>
+                }
+                else
+                {
+                    <text>To be released</text>
+                }
+            </small>
+        </div>
+    </div>
+</div>

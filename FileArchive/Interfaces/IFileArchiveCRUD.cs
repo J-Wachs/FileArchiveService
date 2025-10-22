@@ -11,6 +11,12 @@ public interface IFileArchiveCRUD
     Task<Result> CreateUpdateDeleteArchiveFromUI(string parentKey, FileArchiveList fileArchiveList, string userId);
 
     /// <summary>
+    /// Handles the actions user selects in the UI component.
+    /// </summary>
+    Task<Result> CreateUpdateDeleteArchiveFromUI(string parentKey, FileArchiveCards fileArchiveCards, string userId);
+
+
+    /// <summary>
     /// Retrieves a list of info about all the files having the supplied parent key.
     /// </summary>
     /// <param name="parentKey">Key to retrieve file information for</param>

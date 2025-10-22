@@ -26,7 +26,7 @@ public class FileArchiveController(
     /// <summary>
     /// Download a file. The token contains the Id of the file to download from the file archive.
     /// </summary>
-    /// <param name="token">Java Web Token containing information about user and the file to download</param>
+    /// <param name="token">Json Web Token containing information about user and the file to download</param>
     /// <returns></returns>
     [Route("DownloadFile")]
     [HttpGet]

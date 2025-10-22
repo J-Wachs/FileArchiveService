@@ -4,14 +4,14 @@
 
 <style>
     .hover-item {
-        text-decoration: inherit;
-        cursor: inherit;
-    }
+    text-decoration: inherit;
+    cursor: inherit;
+}
 
-        .hover-item:hover {
-            text-decoration: underline;
-            cursor: pointer;
-        }
+    .hover-item:hover {
+        text-decoration: underline;
+        cursor: pointer;
+    }
 </style>
 
 <div style="height:@Height;overflow-y:scroll" class="form-control">
@@ -119,11 +119,11 @@
             <div class="col-sm-10">
                 @if (AllowSelectMultipleFiles)
                 {
-                    <InputFile OnChange="GetFilesToUpload" multiple class="btn mt-3" accept="@FileTypesAccepted" />
+                    <InputFile id="fileInput" OnChange="GetFilesToUpload" multiple class="btn mt-3" accept="@FileTypesAccepted" />
                 }
                 else
                 {
-                    <InputFile OnChange="GetFilesToUpload" class="btn mt-3" accept="@FileTypesAccepted" />
+                    <InputFile id="fileInput" OnChange="GetFilesToUpload" class="btn mt-3" accept="@FileTypesAccepted" />
                 }
             </div>
         </div>

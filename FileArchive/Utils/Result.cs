@@ -95,6 +95,13 @@ public class Result : AbstractResult
     public static Result Fatal(string message) => new(ResultCode.ServerError, [message]);
 
     /// <summary>
+    /// Creates a new Result instance by copying the state of another non-generic Result.
+    /// </summary>
+    /// <param name="result">The result to copy.</param>
+    /// <returns>A new Result instance with the same properties.</returns>
+    public static Result CopyResult(Result result) => new(result.ResultCode, result.Messages);
+
+    /// <summary>
     /// Creates a new Result object with mwssages and result code from Result object in parameter.
     /// </summary>
     /// <typeparam name="TResult">The data type of the source result.</typeparam>

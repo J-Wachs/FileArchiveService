@@ -8,35 +8,25 @@ public class FileArchiveCRUD(IFileArchiveFileInfoCRUD fileArchiveFileInfoCRUD, I
 {
     public async Task<Result> CreateUpdateDeleteArchiveFromUI(string parentKey, FileArchiveList fileArchiveList, string userId)
     {
-        foreach (var oneFile in fileArchiveList.Files)
-        {
-            Result? result = default;
-            if (oneFile.Insert is true)
-            {
-                result = await InsertFile(parentKey, userId, oneFile);
-            }
-            else if (oneFile.Delete is true)
-            {
-                result = await DeleteFile(oneFile);
-            }
-            else if (oneFile.Update is true)
-                result = await UpdateFile(parentKey, userId, oneFile);
-
-            // If all control flags are false, then we do nothing
-            if (result is not null && result.IsSuccess is false)
-            {
-                return result;
-            }
-        }
-
-        // Remove deleted entried:
-        fileArchiveList.Files.RemoveAll(x => x.Delete == true);
+        var handleFileActionsResult = await HandleFileActions(parentKey, userId, fileArchiveList.Files);
 
         await fileArchiveList.RefreshData();
 
         return Result.Success();
     }
 
+    public async Task<Result> CreateUpdateDeleteArchiveFromUI(string parentKey, FileArchiveCards fileArchiveCards, string userId)
+    {
+        var handleFileActionsResult = await HandleFileActions(parentKey, userId, fileArchiveCards.Files);
+        if (handleFileActionsResult.IsSuccess is false)
+        {
+            return Result.CopyResult(handleFileActionsResult);
+        }
+
+        await fileArchiveCards.RefreshData();
+
+        return Result.Success();
+    }
 
     public async Task<Result<List<FileArchiveFileInfoUI>>> GetListOfFileInfoUIForArchive(string parentKey)
     {
@@ -86,6 +76,41 @@ public class FileArchiveCRUD(IFileArchiveFileInfoCRUD fileArchiveFileInfoCRUD, I
         return Result.Success();
 	}
 
+    /// <summary>
+    /// Handle the file actions selected by the user in the UI component.
+    /// </summary>
+    /// <param name="parentKey"></param>
+    /// <param name="userId"></param>
+    /// <param name="files"></param>
+    /// <returns></returns>
+    private async Task<Result> HandleFileActions(string parentKey, string userId, List<FileArchiveFileInfoUI> files)
+    {
+        foreach (var oneFile in files)
+        {
+            Result? result = default;
+            if (oneFile.Insert is true)
+            {
+                result = await InsertFile(parentKey, userId, oneFile);
+            }
+            else if (oneFile.Delete is true)
+            {
+                result = await DeleteFile(oneFile);
+            }
+            else if (oneFile.Update is true)
+                result = await UpdateFile(parentKey, userId, oneFile);
+
+            // If all control flags are false, then we do nothing
+            if (result is not null && result.IsSuccess is false)
+            {
+                return result;
+            }
+        }
+
+        // Remove deleted entried:
+        files.RemoveAll(x => x.Delete == true);
+
+        return Result.Success();
+    }
 
     /// <summary>
     /// Adds one file to the file archive. Two step process: First add information then actual file.
